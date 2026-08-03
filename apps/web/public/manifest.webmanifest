@@ -1,0 +1,19 @@
+{
+  "name": "Computer Room Manager",
+  "short_name": "Room Manager",
+  "description": "ניהול חדרי מחשבים, עמדות אינטרנט ומרכזי הדפסה",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
