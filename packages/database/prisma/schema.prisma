@@ -878,6 +878,9 @@ model Subscription {
   hoursPerMonth Int?
   includedPrints Int?
   autoRenew     Boolean              @default(true)
+  // set for externally-billed subscriptions (e.g. a Nedarim Plus standing order,
+  // KevaId); when external, the internal renewal worker does not charge.
+  externalRef   String?
   currentPeriodEnd DateTime
   cancelledAt   DateTime?
   createdAt     DateTime             @default(now())

@@ -88,5 +88,20 @@ pnpm dev
   (`sc.exe create CrmAgent …`). מבצע register → heartbeat → פקודות מרשימה מאושרת.
 - **E2E:** הרם את הסטאק + `pnpm db:seed`, ואז `pnpm e2e` (Playwright).
 
+## סליקת אשראי — נדרים פלוס / Nedarim Plus
+המערכת מחוברת ל**נדרים פלוס** בשיטת ה-iframe המאובטח (סליקה ישירה עם מספר כרטיס
+דרך API אסורה בחוק בישראל):
+1. הזן ב-`.env`: `NEDARIM_MOSAD_ID`, `NEDARIM_API_VALID`, `NEDARIM_API_PASSWORD`
+   (לזיכויים), ו-`PUBLIC_BASE_URL` (כתובת ציבורית שנדרים יכול להגיע אליה).
+2. בקש משירות הלקוחות של נדרים לרשום את כתובת ה-CallBack:
+   `<PUBLIC_BASE_URL>/api/v1/payments/nedarim/callback` — לעסקאות רגילות ולהו"ק.
+3. בקופה/קיוסק לחץ **"שלם באשראי (נדרים פלוס)"** — נפתח iframe מאובטח; הכרטיס מוקלד
+   בתוכו, והאישור הסופי מגיע ל-CallBack בשרת (server-authoritative, עם הצלבת Param + סכום).
+- זרימה: `POST /payments/nedarim/prepare` → iframe `FinishTransaction2` → CallBack →
+  סגירת המכירה + זיכוי החבילה דרך ה-ledger. זיכוי: `POST /payments/nedarim/refund/:saleId`.
+- תומך תשלום חד-פעמי (Ragil) והוראת קבע (HK), ללא תשלומים. `ThirdPartyReceipt=1`
+  כי המערכת מפיקה קבלות בעצמה. **הערה:** ה-iframe לא עובד מ-localhost — לבדיקות מקומיות
+  יש כפתור "אישור ידני".
+
 ## רישיון / License
 Proprietary — כל הזכויות שמורות. נבנה מאפס ללא העתקת קוד/עיצוב ממערכת קיימת.

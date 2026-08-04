@@ -80,6 +80,19 @@ Remaining (external integrations only): real vendor adapters (SMS/email/WhatsApp
 acquirer), real object-storage backend, full E2E run of all 10 scenarios in CI,
 load/performance testing, monitoring/alerting wiring.
 
+## Live verification (against real Postgres + Redis)
+The stack was run end-to-end and the core scenarios exercised via the real API:
+- Scenario 1 — ratio-2 session billed the group minimum, deducted from the money
+  balance, and wrote a USAGE ledger entry (5000→4200 agorot).
+- Scenario 5 — cashier refund attempt returned 403.
+- Scenario 7 — two identical POST /pos/sales with one Idempotency-Key returned the
+  same sale (no double charge).
+- Session pause/resume — paused gap counted as free (pausedSeconds) and not billed.
+
+## Post-stage additions
+Session pause/resume · printers + print-price-rule management · low-disk manager
+alert on agent heartbeat · customer detail page (balances, load, ledger).
+
 ## Mandatory test scenarios (Stage 5 gate)
 1. Buy 100 min, use on ratio-2 computer.
 2. Move from standard to premium computer mid-session.
