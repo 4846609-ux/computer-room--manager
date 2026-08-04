@@ -970,6 +970,9 @@ model UsageSession {
   pricingSnapshot Json // captured price rules at open
   startedAt      DateTime?
   endedAt        DateTime?
+  // checkpoint up to which the session has already been billed; advances on
+  // transfer/close so multi-computer sessions bill each segment at its own ratio
+  billedThroughAt DateTime?
   plannedSeconds Int? // for prepaid time
   secondsBilled  Int                  @default(0)
   pausedSeconds  Int                  @default(0)

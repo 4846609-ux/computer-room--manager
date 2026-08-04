@@ -14,11 +14,18 @@ Staged delivery. Each stage ends with lint + typecheck + tests green.
   **RBAC** guards, **auth** (Argon2 + access/refresh), audit interceptor, Swagger.
 - `apps/web`: Next.js RTL/Hebrew shell, design system tokens, login, dashboard scaffold.
 
-## Stage 3 — MVP
-1. Login (2FA optional) · 2. Branches · 3. Computers · 4. Computer groups ·
-5. Customers · 6. Packages · 7. Balances (ledger) · 8. Sessions ·
-9. Real-time dashboard + floor plan · 10. Basic Agent (register/heartbeat/commands) ·
-11. Basic POS (shift, sale, payment, receipt) · 12. Basic reports · 13. Audit log.
+## Stage 3 — MVP 🚧 (in progress)
+Done in this iteration:
+1. ✅ Login · 2. ✅ Branches · 3. ✅ Computers (CRUD + remote allow-listed commands) ·
+4. ✅ Computer groups (pricing config) · 5. ✅ Customers (CRUD, search, load balance) ·
+7. ✅ Balances (append-only ledger, transactional, overdraft-guarded) ·
+8. ✅ Sessions (open/close/add-time/transfer, per-segment ratio billing) ·
+9. ✅ Live dashboard metrics endpoint + wired UI · 10. ✅ Agent
+(register/heartbeat/command-result) · 13. ✅ Audit log (read API + writes on every
+mutation). Web pages: computers, customers, sessions, dashboard.
+
+Remaining for Stage 3: 6. Packages purchase/assign flow · 11. POS (shift, sale,
+payment, receipt) · 12. Basic reports · floor-plan editor · 2FA verification.
 
 ## Stage 4 — Extensions
 Print jobs & pricing · Reservations & waiting list · Maintenance/tickets ·

@@ -2,8 +2,10 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
+import { initAccessToken } from '@/lib/api';
 
 export function Providers({ children }: { children: ReactNode }) {
+  initAccessToken();
   const [client] = useState(
     () =>
       new QueryClient({

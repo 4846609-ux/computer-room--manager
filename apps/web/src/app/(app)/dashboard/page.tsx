@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   Monitor,
   MonitorPlay,
@@ -10,12 +11,14 @@ import {
   Wallet,
   Printer,
 } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
+import type { DashboardMetrics } from '@/lib/types';
+import { formatILS } from '@/lib/utils';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { RevenueChart, type RevenuePoint } from '@/components/dashboard/revenue-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Placeholder shape until the /dashboard/metrics endpoint is wired (Stage 3).
-// Values render from the API response; the scaffold shows representative figures.
+// Weekly revenue series is a placeholder until the reporting endpoint lands (Stage 4).
 const revenueSeries: RevenuePoint[] = [
   { day: "א'", revenue: 1240 },
   { day: "ב'", revenue: 980 },
@@ -37,6 +40,15 @@ const STATUS_LEGEND = [
 ];
 
 export default function DashboardPage() {
+  const { data: m } = useQuery({
+    queryKey: ['dashboard-metrics'],
+    queryFn: () => apiFetch<DashboardMetrics>('/dashboard/metrics'),
+    refetchInterval: 20_000,
+    retry: false,
+  });
+
+  const c = m?.computers;
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -48,15 +60,25 @@ export default function DashboardPage() {
         className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
         aria-label="מדדים עליונים"
       >
-        <StatCard label="סה״כ עמדות" value="24" icon={Monitor} />
-        <StatCard label="פעילות כעת" value="11" icon={MonitorPlay} tone="success" />
-        <StatCard label="פנויות" value="9" icon={MonitorCheck} tone="success" />
-        <StatCard label="מנותקות" value="3" icon={MonitorX} tone="warning" />
-        <StatCard label="בתקלה" value="1" icon={TriangleAlert} tone="danger" />
-        <StatCard label="לקוחות מחוברים" value="11" icon={Users} />
-        <StatCard label="הכנסות היום" value="₪1,810" icon={Wallet} />
-        <StatCard label="הדפסות היום" value="142" icon={Printer} />
+        <StatCard label="סה״כ עמדות" value={String(c?.total ?? '—')} icon={Monitor} />
+        <StatCard label="פעילות כעת" value={String(c?.inUse ?? '—')} icon={MonitorPlay} tone="success" />
+        <StatCard label="פנויות" value={String(c?.available ?? '—')} icon={MonitorCheck} tone="success" />
+        <StatCard label="מנותקות" value={String(c?.disconnected ?? '—')} icon={MonitorX} tone="warning" />
+        <StatCard label="בתקלה" value={String(c?.fault ?? '—')} icon={TriangleAlert} tone="danger" />
+        <StatCard label="לקוחות מחוברים" value={String(m?.connectedCustomers ?? '—')} icon={Users} />
+        <StatCard
+          label="הכנסות היום"
+          value={m ? formatILS(m.revenueTodayMinor) : '—'}
+          icon={Wallet}
+        />
+        <StatCard label="הדפסות היום" value={String(m?.printsToday ?? '—')} icon={Printer} />
       </section>
+
+      {!m && (
+        <p className="rounded-md bg-secondary px-4 py-2 text-sm text-muted-foreground">
+          המדדים נטענים מהשרת. אם הם אינם מופיעים — התחבר מחדש וודא שה-API פועל.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -82,7 +104,7 @@ export default function DashboardPage() {
               ))}
             </ul>
             <p className="mt-4 text-xs text-muted-foreground">
-              מפת החדר האינטראקטיבית (Floor Plan) תיבנה בשלב ה-MVP.
+              מפת החדר האינטראקטיבית (Floor Plan) תיבנה בשלב הבא.
             </p>
           </CardContent>
         </Card>

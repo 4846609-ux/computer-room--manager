@@ -70,9 +70,14 @@ pnpm dev
 | `pnpm db:seed` | נתוני seed |
 
 ## סטטוס / Status
-ראו [`docs/development-roadmap.md`](./docs/development-roadmap.md). שלב 1 (אפיון) ושלב 2
-(תשתית: schema, shared, auth, tenancy, RBAC, design system) הושלמו. שלב 3 (MVP)
-בהמשך: מודולי מחשבים/לקוחות/חבילות/יתרות/sessions/POS/דוחות ולוח בקרה חי.
+ראו [`docs/development-roadmap.md`](./docs/development-roadmap.md).
+- **שלב 1 (אפיון)** ✅ · **שלב 2 (תשתית)** ✅.
+- **שלב 3 (MVP)** 🚧 — הושלמו: לקוחות (חיפוש + טעינת יתרה), קבוצות מחשבים, מחשבים
+  (CRUD + פקודות מרחוק מרשימה מאושרת), **יתרות עם ledger טרנזקציוני**,
+  **sessions עם חיוב לפי יחס וקטעים** (כולל העברה בין מחשבים), Agent
+  (register/heartbeat/פקודות), מדדי לוח בקרה חיים, ויומן פעילות. מסכי web:
+  מחשבים, לקוחות, שימושים, לוח בקרה.
+- נותר לשלב 3: מכירת חבילות, קופה (POS), דוחות, עורך Floor Plan, אימות 2FA.
 
 ## רישיון / License
 Proprietary — כל הזכויות שמורות. נבנה מאפס ללא העתקת קוד/עיצוב ממערכת קיימת.
