@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ShoppingCart } from 'lucide-react';
 import { apiFetch, apiFetchText, ApiError } from '@/lib/api';
+import { NedarimPayment, type NedarimPrepared } from '@/components/payments/nedarim-payment';
 import type { CustomerRow, PackageRow, Paginated, ProductRow } from '@/lib/types';
 import { formatILS } from '@/lib/utils';
 import { PageHeader } from '@/components/data/page-header';
@@ -30,6 +31,7 @@ export default function PosPage() {
   const [method, setMethod] = useState('CASH');
   const [message, setMessage] = useState<string | null>(null);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
+  const [nedarim, setNedarim] = useState<NedarimPrepared | null>(null);
 
   const { data: packages } = useQuery({
     queryKey: ['packages'],
@@ -76,6 +78,35 @@ export default function PosPage() {
   });
 
   const needsCustomer = cart.some((i) => i.kind === 'PACKAGE');
+
+  async function payWithNedarim() {
+    if (!branchId || cart.length === 0) return;
+    setMessage(null);
+    try {
+      const prepared = await apiFetch<NedarimPrepared>('/payments/nedarim/prepare', {
+        method: 'POST',
+        body: JSON.stringify({
+          branchId,
+          customerId: customerId || undefined,
+          items: cart.map((i) => ({ kind: i.kind, refId: i.refId })),
+          paymentType: 'REGULAR',
+        }),
+      });
+      setNedarim(prepared);
+    } catch (e) {
+      setMessage(e instanceof ApiError ? e.message : 'שגיאה בהכנת התשלום');
+    }
+  }
+
+  function onNedarimDone() {
+    const saleId = nedarim?.saleId ?? null;
+    setNedarim(null);
+    setMessage('התשלום באשראי בוצע');
+    setLastSaleId(saleId);
+    setCart([]);
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+    setTimeout(() => setMessage(null), 3000);
+  }
 
   async function printReceipt() {
     if (!lastSaleId) return;
@@ -214,7 +245,15 @@ export default function PosPage() {
               onClick={() => sell.mutate()}
             >
               <ShoppingCart className="h-4 w-4" aria-hidden />
-              {sell.isPending ? 'מבצע…' : `תשלום ${formatILS(total)}`}
+              {sell.isPending ? 'מבצע…' : `תשלום ${method === 'CARD' ? '(מזומן/אחר)' : ''} ${formatILS(total)}`}
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={cart.length === 0 || (needsCustomer && !customerId)}
+              onClick={payWithNedarim}
+            >
+              שלם באשראי (נדרים פלוס)
             </Button>
 
             {lastSaleId && (
@@ -225,6 +264,10 @@ export default function PosPage() {
           </CardContent>
         </Card>
       </div>
+
+      {nedarim && (
+        <NedarimPayment prepared={nedarim} onDone={onNedarimDone} onCancel={() => setNedarim(null)} />
+      )}
     </div>
   );
 }

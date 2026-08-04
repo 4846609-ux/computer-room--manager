@@ -13,6 +13,7 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS build
 COPY packages ./packages
 COPY apps/web ./apps/web
+RUN pnpm --filter @crm/shared build
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN pnpm --filter @crm/web build

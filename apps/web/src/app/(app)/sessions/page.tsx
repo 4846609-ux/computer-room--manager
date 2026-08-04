@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Square } from 'lucide-react';
+import { Square, Pause, Play } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import type { Paginated, SessionRow } from '@/lib/types';
 import { formatILS } from '@/lib/utils';
@@ -29,6 +29,11 @@ export default function SessionsPage() {
     mutationFn: (id: string) => apiFetch(`/sessions/${id}/close`, { method: 'POST' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sessions'] }),
   });
+  const toggle = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'pause' | 'resume' }) =>
+      apiFetch(`/sessions/${id}/${action}`, { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sessions'] }),
+  });
 
   const columns: Column<SessionRow>[] = [
     {
@@ -49,16 +54,27 @@ export default function SessionsPage() {
       key: 'actions',
       header: 'פעולות',
       render: (r) => (
-        <Button
-          size="sm"
-          variant="danger"
-          disabled={closeMutation.isPending}
-          onClick={() => closeMutation.mutate(r.id)}
-          aria-label={`סיום שימוש בעמדה ${r.computer?.name ?? ''}`}
-        >
-          <Square className="h-4 w-4" aria-hidden />
-          סיום
-        </Button>
+        <div className="flex gap-1">
+          {r.status === 'PAUSED' ? (
+            <Button size="sm" variant="outline" onClick={() => toggle.mutate({ id: r.id, action: 'resume' })} aria-label="חידוש">
+              <Play className="h-4 w-4" aria-hidden />
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => toggle.mutate({ id: r.id, action: 'pause' })} aria-label="השהיה">
+              <Pause className="h-4 w-4" aria-hidden />
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="danger"
+            disabled={closeMutation.isPending}
+            onClick={() => closeMutation.mutate(r.id)}
+            aria-label={`סיום שימוש בעמדה ${r.computer?.name ?? ''}`}
+          >
+            <Square className="h-4 w-4" aria-hidden />
+            סיום
+          </Button>
+        </div>
       ),
     },
   ];

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { UserPlus, Download } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { apiFetch, apiFetchText } from '@/lib/api';
@@ -56,7 +57,15 @@ export default function CustomersPage() {
 
   const columns: Column<CustomerRow>[] = [
     { key: 'customerNumber', header: 'מס׳' },
-    { key: 'fullName', header: 'שם' },
+    {
+      key: 'fullName',
+      header: 'שם',
+      render: (r) => (
+        <Link href={`/customers/${r.id}`} className="font-medium text-primary hover:underline">
+          {r.fullName}
+        </Link>
+      ),
+    },
     { key: 'phone', header: 'טלפון', render: (r) => r.phone ?? '—' },
     { key: 'group', header: 'קבוצה', render: (r) => r.group?.name ?? '—' },
     {
