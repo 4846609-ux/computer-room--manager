@@ -17,9 +17,11 @@
     "db:migrate": "pnpm --filter @crm/database migrate:dev",
     "db:seed": "pnpm --filter @crm/database seed",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "e2e": "playwright test -c e2e/playwright.config.ts"
   },
   "devDependencies": {
+    "@playwright/test": "^1.47.2",
     "prettier": "^3.3.3",
     "turbo": "^2.1.3",
     "typescript": "^5.6.2"

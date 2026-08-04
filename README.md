@@ -79,5 +79,14 @@ pnpm dev
   מחשבים, לקוחות, שימושים, לוח בקרה.
 - נותר לשלב 3: מכירת חבילות, קופה (POS), דוחות, עורך Floor Plan, אימות 2FA.
 
+## פריסה / Deployment
+- **Dev:** `pnpm docker:up` (Postgres+Redis) + `pnpm dev`.
+- **Production:** `docker compose -f docker-compose.prod.yml up --build` — בונה image
+  ל-API ול-web, מריץ `prisma migrate deploy` באתחול. משתני סביבה דרך `.env`/secret
+  manager. גיבוי מסד: `DATABASE_URL=… ./scripts/backup.sh`.
+- **Agent (.NET 8):** `agent/src/CrmAgent` — `dotnet build` ואז התקנה כשירות Windows
+  (`sc.exe create CrmAgent …`). מבצע register → heartbeat → פקודות מרשימה מאושרת.
+- **E2E:** הרם את הסטאק + `pnpm db:seed`, ואז `pnpm e2e` (Playwright).
+
 ## רישיון / License
 Proprietary — כל הזכויות שמורות. נבנה מאפס ללא העתקת קוד/עיצוב ממערכת קיימת.

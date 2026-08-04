@@ -58,11 +58,19 @@ pages; CSV export button.
 adapters, object-storage file I/O for personal storage, BullMQ scheduling of the
 subscription/notification workers.
 
-## Stage 5 — Production hardening
-Test matrix (unit, integration, API, permissions, pricing, ledger, session billing,
-print billing, multi-tenant isolation, WS authz, agent reconnect, offline recovery,
-Playwright E2E) · security review · performance · monitoring · backups · docs ·
-install guide · migration scripts · CI/CD deployment.
+## Stage 5 — Production hardening 🚧 (in progress)
+Done: ✅ expanded test suite (pricing, ledger invariant, TOTP RFC vectors, RBAC
+role mapping incl. scenario 5, agent allow-list, WS room isolation incl. scenario 8
+— 25 unit tests) · ✅ Playwright E2E config + auth smoke spec (`pnpm e2e` against a
+live stack) · ✅ provider **adapters** (payments PSP + notifications) with safe
+defaults, swappable per deployment · ✅ **Dockerfiles** (api + web standalone),
+production docker-compose (migrate-on-boot), `.dockerignore` · ✅ DB **backup**
+script with retention · ✅ **Agent** .NET 8 Worker-service skeleton implementing the
+protocol (register → heartbeat → allow-listed command dispatch, backoff).
+
+Remaining: real vendor adapters (SMS/email/WhatsApp/acquirer), object-storage file
+I/O, BullMQ worker scheduling, full E2E coverage of the mandatory scenarios,
+load/performance testing, and monitoring/alerting wiring.
 
 ## Mandatory test scenarios (Stage 5 gate)
 1. Buy 100 min, use on ratio-2 computer.
