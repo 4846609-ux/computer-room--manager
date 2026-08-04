@@ -19,6 +19,12 @@ import { CatalogModule } from './catalog/catalog.module';
 import { PrintModule } from './print/print.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ReservationsModule } from './reservations/reservations.module';
+import { WaitingListModule } from './waiting-list/waiting-list.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { StorageModule } from './storage/storage.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { DataModule } from './data/data.module';
+import { KioskModule } from './kiosk/kiosk.module';
 import { ReportsModule } from './reports/reports.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AuditReadModule } from './audit/audit.module';
@@ -49,6 +55,12 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     PrintModule,
     MaintenanceModule,
     ReservationsModule,
+    WaitingListModule,
+    SubscriptionsModule,
+    StorageModule,
+    NotificationsModule,
+    DataModule,
+    KioskModule,
     ReportsModule,
     DashboardModule,
     AuditReadModule,

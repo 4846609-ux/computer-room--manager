@@ -8,5 +8,6 @@ import { CashService } from './cash.service';
   imports: [RealtimeModule],
   controllers: [PosController],
   providers: [SalesService, CashService],
+  exports: [SalesService],
 })
 export class PosModule {}

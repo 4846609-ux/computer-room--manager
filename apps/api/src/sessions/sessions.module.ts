@@ -7,5 +7,6 @@ import { SessionsService } from './sessions.service';
   imports: [RealtimeModule],
   controllers: [SessionsController],
   providers: [SessionsService],
+  exports: [SessionsService],
 })
 export class SessionsModule {}
