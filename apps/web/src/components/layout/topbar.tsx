@@ -1,15 +1,26 @@
 'use client';
 
+import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { Bell, Search, Building2 } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 
 /** Top header: global search, branch selector, notifications, profile. */
 export function Topbar() {
+  const { data } = useQuery({
+    queryKey: ['notifications-unread'],
+    queryFn: () => apiFetch<{ count: number }>('/notifications/unread-count'),
+    refetchInterval: 30_000,
+    retry: false,
+  });
+  const unread = data?.count ?? 0;
+
   return (
     <header className="flex h-16 items-center gap-3 border-b border-border bg-card px-4">
       <div className="relative flex-1 max-w-md">
         <Search
-          className="pointer-events-none absolute inset-inline-start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
           style={{ insetInlineStart: '0.75rem' }}
           aria-hidden
         />
@@ -24,13 +35,18 @@ export function Topbar() {
         <span>כל הסניפים</span>
       </button>
 
-      <button
+      <Link
+        href="/notifications"
         className="relative rounded-md p-2 hover:bg-secondary"
-        aria-label="התראות"
+        aria-label={`התראות${unread ? ` (${unread} שלא נקראו)` : ''}`}
       >
         <Bell className="h-5 w-5" aria-hidden />
-        <span className="absolute end-1.5 top-1.5 h-2 w-2 rounded-full bg-status-fault" aria-hidden />
-      </button>
+        {unread > 0 && (
+          <span className="absolute end-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-status-fault px-1 text-[10px] font-bold text-white">
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </Link>
 
       <div
         className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary"

@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Download } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, apiFetchText } from '@/lib/api';
 import type { CustomerRow, Paginated } from '@/lib/types';
 import { formatILS } from '@/lib/utils';
 import { PageHeader } from '@/components/data/page-header';
@@ -43,6 +43,17 @@ export default function CustomersPage() {
     },
   });
 
+  async function exportCsv() {
+    const csv = await apiFetchText('/exports/customers.csv');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'customers.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const columns: Column<CustomerRow>[] = [
     { key: 'customerNumber', header: 'מס׳' },
     { key: 'fullName', header: 'שם' },
@@ -67,10 +78,16 @@ export default function CustomersPage() {
         title="לקוחות"
         subtitle="ניהול לקוחות ויתרות"
         action={
-          <Button onClick={() => setShowForm((v) => !v)}>
-            <UserPlus className="h-4 w-4" aria-hidden />
-            לקוח חדש
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={exportCsv}>
+              <Download className="h-4 w-4" aria-hidden />
+              ייצוא CSV
+            </Button>
+            <Button onClick={() => setShowForm((v) => !v)}>
+              <UserPlus className="h-4 w-4" aria-hidden />
+              לקוח חדש
+            </Button>
+          </div>
         }
       />
 
