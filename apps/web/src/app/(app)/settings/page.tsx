@@ -16,6 +16,87 @@ interface Me {
   roles: string[];
 }
 
+interface OrgSettings {
+  currency: string;
+  timezone: string;
+  vatPercent: number;
+  roundingRule: string;
+  retentionDays: number;
+}
+
+function OrgSettingsCard() {
+  const queryClient = useQueryClient();
+  const [saved, setSaved] = useState(false);
+  const { data } = useQuery({
+    queryKey: ['org-settings'],
+    queryFn: () => apiFetch<OrgSettings>('/settings/org'),
+    retry: false,
+  });
+  const [form, setForm] = useState<Partial<OrgSettings>>({});
+  const current = { ...data, ...form } as OrgSettings;
+
+  const save = useMutation({
+    mutationFn: () =>
+      apiFetch('/settings/org', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          vatPercent: Number(current.vatPercent),
+          currency: current.currency,
+          timezone: current.timezone,
+          roundingRule: current.roundingRule,
+          retentionDays: Number(current.retentionDays),
+        }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-settings'] });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    },
+  });
+
+  if (!data) return null;
+
+  return (
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle>הגדרות ארגון</CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1 text-sm">
+          מע"מ (%)
+          <Input
+            type="number"
+            value={current.vatPercent ?? ''}
+            onChange={(e) => setForm((f) => ({ ...f, vatPercent: Number(e.target.value) }))}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          מטבע
+          <Input value={current.currency ?? ''} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          אזור זמן
+          <Input value={current.timezone ?? ''} onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))} />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          שמירת נתונים (ימים)
+          <Input
+            type="number"
+            value={current.retentionDays ?? ''}
+            onChange={(e) => setForm((f) => ({ ...f, retentionDays: Number(e.target.value) }))}
+          />
+        </label>
+        <div className="col-span-2 flex items-center gap-3">
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? 'שומר…' : 'שמור'}
+          </Button>
+          {saved && <span className="text-sm text-status-available">נשמר ✓</span>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const [setup, setSetup] = useState<{ secret: string; otpauthUri: string } | null>(null);
@@ -60,6 +141,8 @@ export default function SettingsPage() {
           <div>תפקידים: {me?.roles?.join(', ') ?? '—'}</div>
         </CardContent>
       </Card>
+
+      <OrgSettingsCard />
 
       <Card className="max-w-xl">
         <CardHeader>
