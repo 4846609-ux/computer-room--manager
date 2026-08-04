@@ -68,9 +68,17 @@ production docker-compose (migrate-on-boot), `.dockerignore` · ✅ DB **backup*
 script with retention · ✅ **Agent** .NET 8 Worker-service skeleton implementing the
 protocol (register → heartbeat → allow-listed command dispatch, backoff).
 
-Remaining: real vendor adapters (SMS/email/WhatsApp/acquirer), object-storage file
-I/O, BullMQ worker scheduling, full E2E coverage of the mandatory scenarios,
-load/performance testing, and monitoring/alerting wiring.
+Also done: ✅ **BullMQ** worker module (hourly subscription-renewal sweep; disabled
+unless ENABLE_WORKERS=true so dev boots without Redis) · ✅ object-**storage**
+adapter (interface + no-op default, bound in AdaptersModule) · ✅ **employees**
+module + page (create with role/PIN, RBAC-guarded) · ✅ organization **settings**
+module + page (VAT/currency/timezone/retention) · ✅ **coupons** module + page,
+integrated into the sale flow (percent/fixed discount, redemption recorded) ·
+✅ more E2E specs (navigation across core screens).
+
+Remaining (external integrations only): real vendor adapters (SMS/email/WhatsApp/
+acquirer), real object-storage backend, full E2E run of all 10 scenarios in CI,
+load/performance testing, monitoring/alerting wiring.
 
 ## Mandatory test scenarios (Stage 5 gate)
 1. Buy 100 min, use on ratio-2 computer.
