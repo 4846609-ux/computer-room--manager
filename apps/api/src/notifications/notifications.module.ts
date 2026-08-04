@@ -1,10 +1,15 @@
-import { Body, Controller, Get, Injectable, Module, NotFoundException, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Injectable, Module, NotFoundException, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 import { NotificationChannel, NotificationSeverity } from '@crm/database';
 import { PERMISSIONS, WS_EVENTS, type AuthPrincipal } from '@crm/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../common/audit/audit.service';
+import {
+  NOTIFICATION_PROVIDER,
+  type NotificationProvider,
+  type OutboundMessage,
+} from '../common/adapters/notification-provider';
 import { CurrentUser, RequirePermissions } from '../common/decorators';
 
 class SendNotificationDto {
@@ -26,6 +31,7 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    @Inject(NOTIFICATION_PROVIDER) private readonly provider: NotificationProvider,
   ) {}
 
   /** Internal helper other modules use to raise a manager alert. */
@@ -76,6 +82,18 @@ export class NotificationsService {
         sentAt: new Date(),
       },
     });
+    // External channels are dispatched through the provider adapter (logging by
+    // default). IN_APP/ON_SCREEN are surfaced in the console without a provider.
+    const external: OutboundMessage['channel'][] = ['EMAIL', 'SMS', 'WHATSAPP', 'PUSH'];
+    if (dto.recipientId && external.includes(notification.channel as OutboundMessage['channel'])) {
+      await this.provider.dispatch({
+        channel: notification.channel as OutboundMessage['channel'],
+        to: dto.recipientId,
+        subject: dto.title,
+        body: dto.body ?? dto.title,
+      });
+    }
+
     await this.audit.record({
       tenantId: user.tenantId, actorId: user.employeeId,
       action: 'notification.send', entity: 'Notification', entityId: notification.id,
