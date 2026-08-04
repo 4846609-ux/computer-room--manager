@@ -24,14 +24,30 @@ Done in this iteration:
 (register/heartbeat/command-result) · 13. ✅ Audit log (read API + writes on every
 mutation). Web pages: computers, customers, sessions, dashboard.
 
-Remaining for Stage 3: 6. Packages purchase/assign flow · 11. POS (shift, sale,
-payment, receipt) · 12. Basic reports · floor-plan editor · 2FA verification.
+Also done: 6. ✅ Packages purchase flow (POS sale → payment → package applied to
+balance via ledger) + catalog (packages/products) · 11. ✅ POS (cash shifts with
+variance, sales, idempotent payments, refunds as reversing documents) ·
+12. ✅ Basic reports (revenue by method, usage summary, period presets). Web pages:
+POS and reports.
 
-## Stage 4 — Extensions
-Print jobs & pricing · Reservations & waiting list · Maintenance/tickets ·
-Self-service kiosk · Personal storage · Recurring subscription billing ·
-Documents & invoices · Notifications (multi-channel) · Full floor-plan editor ·
-Import/export.
+Also done: ✅ interactive Floor Plan — rooms API + per-room floor view with live
+status/occupancy and a drag-to-position editor that persists the layout.
+✅ 2FA — dependency-free TOTP (RFC 6238) verified at login, setup/enable/disable
+endpoints + settings UI (RFC test vectors covered). ✅ Fiscal documents —
+per-tenant numbered invoice issuance + printable HTML receipt (browser
+print-to-PDF), issued from POS.
+
+**Stage 3 (MVP) is functionally complete.** Optional polish deferred to later:
+server-rendered PDF binaries, richer floor-plan zones.
+
+## Stage 4 — Extensions 🚧 (in progress)
+Done: ✅ Print jobs & pricing (rule-based per-page pricing, approve→charge from
+print quota or money via ledger) · ✅ Reservations (create/confirm/check-in/cancel/
+no-show, confirmation codes) · ✅ Maintenance/tickets (numbered tickets, category/
+priority, status workflow). Web pages: printing, reservations, maintenance.
+
+Remaining: self-service kiosk · personal storage · recurring subscription billing ·
+multi-channel notifications · import/export · waiting list.
 
 ## Stage 5 — Production hardening
 Test matrix (unit, integration, API, permissions, pricing, ledger, session billing,

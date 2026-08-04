@@ -285,6 +285,11 @@ async function main() {
     data: { tenantId: tenant.id, name: 'שתייה קרה', priceMinor: 800 },
   });
 
+  // 9. Cash register (for POS shifts)
+  await prisma.cashRegister.create({
+    data: { tenantId: tenant.id, branchId: branch.id, name: 'קופה ראשית' },
+  });
+
   console.log('✅ Seed complete.');
   console.log(`   Owner login:   owner@demo.crm / ${DEMO_PASSWORD}`);
   console.log(`   Cashier login: cashier@demo.crm / ${DEMO_PASSWORD}`);
