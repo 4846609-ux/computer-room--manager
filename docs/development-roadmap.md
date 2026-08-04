@@ -46,8 +46,17 @@ print quota or money via ledger) · ✅ Reservations (create/confirm/check-in/ca
 no-show, confirmation codes) · ✅ Maintenance/tickets (numbered tickets, category/
 priority, status workflow). Web pages: printing, reservations, maintenance.
 
-Remaining: self-service kiosk · personal storage · recurring subscription billing ·
-multi-channel notifications · import/export · waiting list.
+Also done: ✅ self-service **kiosk** (phone+OTP login, buy package, load balance,
+open a free station — reusing the same sale/session services & guards) ·
+✅ personal storage (quota management) · ✅ recurring **subscriptions** (create +
+process-due charging via ledger, PAST_DUE on insufficient funds) · ✅ notifications
+center (in-app + manager alerts, unread badge; external channels via adapters) ·
+✅ import/export (customers/sales CSV) · ✅ waiting list. Web: kiosk, notifications
+pages; CSV export button.
+
+**Stage 4 is functionally complete.** Remaining polish: real SMS/email/WhatsApp
+adapters, object-storage file I/O for personal storage, BullMQ scheduling of the
+subscription/notification workers.
 
 ## Stage 5 — Production hardening
 Test matrix (unit, integration, API, permissions, pricing, ledger, session billing,
