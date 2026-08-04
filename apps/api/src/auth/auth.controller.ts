@@ -61,4 +61,22 @@ export class AuthController {
   me(@CurrentUser() user: AuthPrincipal) {
     return this.auth.me(user);
   }
+
+  @Post('2fa/setup')
+  @ApiOperation({ summary: 'התחלת הגדרת אימות דו-שלבי' })
+  twoFactorSetup(@CurrentUser() user: AuthPrincipal) {
+    return this.auth.twoFactorSetup(user);
+  }
+
+  @Post('2fa/enable')
+  @ApiOperation({ summary: 'הפעלת אימות דו-שלבי לאחר אימות קוד' })
+  twoFactorEnable(@CurrentUser() user: AuthPrincipal, @Body() body: { code: string }) {
+    return this.auth.twoFactorEnable(user, body.code ?? '');
+  }
+
+  @Post('2fa/disable')
+  @ApiOperation({ summary: 'כיבוי אימות דו-שלבי' })
+  twoFactorDisable(@CurrentUser() user: AuthPrincipal) {
+    return this.auth.twoFactorDisable(user);
+  }
 }

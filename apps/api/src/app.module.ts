@@ -11,8 +11,15 @@ import { BranchesModule } from './branches/branches.module';
 import { CustomersModule } from './customers/customers.module';
 import { ComputerGroupsModule } from './computer-groups/computer-groups.module';
 import { ComputersModule } from './computers/computers.module';
+import { RoomsModule } from './rooms/rooms.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { AgentModule } from './agent/agent.module';
+import { PosModule } from './pos/pos.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { PrintModule } from './print/print.module';
+import { MaintenanceModule } from './maintenance/maintenance.module';
+import { ReservationsModule } from './reservations/reservations.module';
+import { ReportsModule } from './reports/reports.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AuditReadModule } from './audit/audit.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -34,8 +41,15 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     CustomersModule,
     ComputerGroupsModule,
     ComputersModule,
+    RoomsModule,
     SessionsModule,
     AgentModule,
+    PosModule,
+    CatalogModule,
+    PrintModule,
+    MaintenanceModule,
+    ReservationsModule,
+    ReportsModule,
     DashboardModule,
     AuditReadModule,
   ],

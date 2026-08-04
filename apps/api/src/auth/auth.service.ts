@@ -8,6 +8,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { AuthPrincipal, LoginInput } from '@crm/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from './password.service';
+import { generateBase32Secret, otpauthUri, verifyTotp } from './totp';
 import type { AppConfig } from '../config/configuration';
 
 export interface LoginResult {
@@ -79,13 +80,18 @@ export class AuthService {
     const ok = await this.passwords.verify(employee.passwordHash, input.password);
     if (!ok) throw genericError;
 
-    if (employee.twoFactorEnabled && !input.twoFactorCode) {
-      throw new UnauthorizedException({
-        code: 'AUTH_2FA_REQUIRED',
-        message: 'נדרש קוד אימות דו-שלבי',
-      });
+    if (employee.twoFactorEnabled) {
+      if (!input.twoFactorCode) {
+        throw new UnauthorizedException({
+          code: 'AUTH_2FA_REQUIRED',
+          message: 'נדרש קוד אימות דו-שלבי',
+        });
+      }
+      const ok2fa =
+        !!employee.twoFactorSecret &&
+        verifyTotp(employee.twoFactorSecret, input.twoFactorCode, Math.floor(Date.now() / 1000));
+      if (!ok2fa) throw genericError;
     }
-    // NOTE: TOTP verification is wired in Stage 3 (auth extensions).
 
     const principal = await this.buildPrincipal(employee.id, employee.tenantId);
     const tokens = await this.issueTokens(principal);
@@ -194,11 +200,62 @@ export class AuthService {
     });
   }
 
-  async me(principal: AuthPrincipal): Promise<AuthPrincipal & { fullName: string; email: string }> {
+  async me(principal: AuthPrincipal): Promise<
+    AuthPrincipal & { fullName: string; email: string; twoFactorEnabled: boolean }
+  > {
     const employee = await this.prisma.employee.findUnique({
       where: { id: principal.employeeId },
-      select: { fullName: true, email: true },
+      select: { fullName: true, email: true, twoFactorEnabled: true },
     });
-    return { ...principal, fullName: employee?.fullName ?? '', email: employee?.email ?? '' };
+    return {
+      ...principal,
+      fullName: employee?.fullName ?? '',
+      email: employee?.email ?? '',
+      twoFactorEnabled: employee?.twoFactorEnabled ?? false,
+    };
+  }
+
+  /** Begin 2FA setup: store a pending secret and return the otpauth URI for a QR. */
+  async twoFactorSetup(principal: AuthPrincipal): Promise<{ secret: string; otpauthUri: string }> {
+    const employee = await this.prisma.employee.findUnique({
+      where: { id: principal.employeeId },
+      select: { email: true },
+    });
+    const secret = generateBase32Secret();
+    await this.prisma.employee.update({
+      where: { id: principal.employeeId },
+      data: { twoFactorSecret: secret, twoFactorEnabled: false },
+    });
+    return {
+      secret,
+      otpauthUri: otpauthUri(secret, employee?.email ?? 'user', 'Computer Room Manager'),
+    };
+  }
+
+  /** Confirm the setup code and enable 2FA. */
+  async twoFactorEnable(principal: AuthPrincipal, code: string): Promise<{ enabled: boolean }> {
+    const employee = await this.prisma.employee.findUnique({
+      where: { id: principal.employeeId },
+      select: { twoFactorSecret: true },
+    });
+    if (!employee?.twoFactorSecret) {
+      throw new UnauthorizedException({ code: 'VALIDATION_FAILED', message: 'יש להתחיל הגדרת 2FA' });
+    }
+    if (!verifyTotp(employee.twoFactorSecret, code, Math.floor(Date.now() / 1000))) {
+      throw new UnauthorizedException({ code: 'AUTH_INVALID_CREDENTIALS', message: 'קוד שגוי' });
+    }
+    await this.prisma.employee.update({
+      where: { id: principal.employeeId },
+      data: { twoFactorEnabled: true },
+    });
+    return { enabled: true };
+  }
+
+  async twoFactorDisable(principal: AuthPrincipal): Promise<{ enabled: boolean }> {
+    await this.prisma.employee.update({
+      where: { id: principal.employeeId },
+      data: { twoFactorEnabled: false, twoFactorSecret: null },
+    });
+    return { enabled: false };
   }
 }
