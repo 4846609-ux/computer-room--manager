@@ -18,6 +18,15 @@ export interface AppConfig {
     signingSecret: string;
     installTokenTtl: number;
   };
+  nedarim: {
+    mosadId: string;
+    apiValid: string;
+    apiPassword: string;
+    iframeUrl: string;
+    manageUrl: string;
+    callbackMailError: string;
+  };
+  publicBaseUrl: string;
   redisUrl: string;
 }
 
@@ -41,5 +50,18 @@ export default (): AppConfig => ({
     signingSecret: process.env.AGENT_SIGNING_SECRET ?? 'dev-agent-secret-change-me',
     installTokenTtl: parseInt(process.env.AGENT_INSTALL_TOKEN_TTL ?? '86400', 10),
   },
+  nedarim: {
+    // Nedarim Plus (נדרים פלוס) — iframe integration.
+    // mosadId = מספר מוסד (7 digits). apiValid = client-side "API Valid" text
+    // (safe to send to the iframe). apiPassword = server-only secret for
+    // refunds/history via Manage3.aspx (never sent to the client).
+    mosadId: process.env.NEDARIM_MOSAD_ID ?? '',
+    apiValid: process.env.NEDARIM_API_VALID ?? '',
+    apiPassword: process.env.NEDARIM_API_PASSWORD ?? '',
+    iframeUrl: process.env.NEDARIM_IFRAME_URL ?? 'https://www.matara.pro/nedarimplus/iframe/',
+    manageUrl: process.env.NEDARIM_MANAGE_URL ?? 'https://matara.pro/nedarimplus/Reports/Manage3.aspx',
+    callbackMailError: process.env.NEDARIM_CALLBACK_MAIL_ERROR ?? '',
+  },
+  publicBaseUrl: process.env.PUBLIC_BASE_URL ?? 'http://localhost:4000',
   redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
 });

@@ -33,6 +33,20 @@ export class SessionsController {
     return this.sessions.addTime(user, id, dto);
   }
 
+  @Post(':id/pause')
+  @RequirePermissions(PERMISSIONS.SESSION_MODIFY)
+  @ApiOperation({ summary: 'השהיית שימוש' })
+  pause(@CurrentUser() user: AuthPrincipal, @Param('id') id: string) {
+    return this.sessions.pause(user, id);
+  }
+
+  @Post(':id/resume')
+  @RequirePermissions(PERMISSIONS.SESSION_MODIFY)
+  @ApiOperation({ summary: 'חידוש שימוש' })
+  resume(@CurrentUser() user: AuthPrincipal, @Param('id') id: string) {
+    return this.sessions.resume(user, id);
+  }
+
   @Post(':id/transfer')
   @RequirePermissions(PERMISSIONS.SESSION_TRANSFER)
   @ApiOperation({ summary: 'העברת שימוש למחשב אחר' })

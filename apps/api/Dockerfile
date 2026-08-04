@@ -17,6 +17,8 @@ FROM deps AS build
 COPY packages ./packages
 COPY apps/api ./apps/api
 RUN pnpm --filter @crm/database generate
+RUN pnpm --filter @crm/shared build
+RUN pnpm --filter @crm/database build
 RUN pnpm --filter @crm/api build
 # Prune dev dependencies for a slimmer runtime.
 RUN pnpm --filter @crm/api --prod deploy /app

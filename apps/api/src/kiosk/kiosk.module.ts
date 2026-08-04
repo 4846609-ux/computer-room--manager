@@ -22,6 +22,7 @@ import { SessionsService } from '../sessions/sessions.service';
 import { PosModule } from '../pos/pos.module';
 import { SalesService } from '../pos/sales.service';
 import { SaleItemKind } from '../pos/dto/sale.dto';
+import { PaymentsModule, PaymentsService, NedarimPaymentType } from '../payments/payments.module';
 import { Public } from '../common/decorators';
 import type { AppConfig } from '../config/configuration';
 
@@ -64,6 +65,7 @@ export class KioskService {
     private readonly config: ConfigService<AppConfig, true>,
     private readonly sessions: SessionsService,
     private readonly sales: SalesService,
+    private readonly payments: PaymentsService,
   ) {}
 
   private async resolveCustomer(tenantSlug: string, phone: string) {
@@ -179,6 +181,17 @@ export class KioskService {
     });
   }
 
+  /** Prepare a Nedarim card payment for a package purchase from the kiosk. */
+  async payPrepare(token: string | undefined, packageId: string) {
+    const k = await this.auth(token);
+    return this.payments.prepare(this.principal(k, PERMISSIONS.PAYMENT_TAKE), {
+      branchId: k.branchId,
+      customerId: k.sub,
+      items: [{ kind: SaleItemKind.PACKAGE, refId: packageId }],
+      paymentType: NedarimPaymentType.REGULAR,
+    });
+  }
+
   async openStation(token: string | undefined, dto: KioskOpenDto) {
     const k = await this.auth(token);
     return this.sessions.open(this.principal(k, PERMISSIONS.SESSION_OPEN), {
@@ -228,10 +241,15 @@ class KioskController {
   open(@Body() dto: KioskOpenDto, @Headers('x-kiosk-token') token?: string) {
     return this.kiosk.openStation(token, dto);
   }
+
+  @Public() @Post('pay/prepare') @ApiOperation({ summary: 'הכנת תשלום אשראי (נדרים פלוס)' })
+  payPrepare(@Body() dto: KioskBuyDto, @Headers('x-kiosk-token') token?: string) {
+    return this.kiosk.payPrepare(token, dto.packageId);
+  }
 }
 
 @Module({
-  imports: [JwtModule.register({}), SessionsModule, PosModule],
+  imports: [JwtModule.register({}), SessionsModule, PosModule, PaymentsModule],
   controllers: [KioskController],
   providers: [KioskService],
 })

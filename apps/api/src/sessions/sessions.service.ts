@@ -277,12 +277,66 @@ export class SessionsService {
     return updated;
   }
 
+  /** Pause billing: bill the segment so far, then stop the clock. */
+  async pause(user: AuthPrincipal, id: string) {
+    const session = await this.loadActive(user, id);
+    if (session.status === SessionStatus.PAUSED) return session;
+    const now = new Date();
+    const from = session.billedThroughAt ?? session.startedAt ?? now;
+    const segSeconds = Math.max(0, Math.floor((now.getTime() - from.getTime()) / 1000));
+    const pricing = this.pricingFromGroup(session.computer.group);
+    const updated = await this.prisma.usageSession.update({
+      where: { id },
+      data: {
+        status: SessionStatus.PAUSED,
+        secondsBilled: session.secondsBilled + segSeconds,
+        amountMinor: session.amountMinor + this.segmentCharge(segSeconds, pricing),
+        billedThroughAt: now,
+        events: { create: { tenantId: user.tenantId, type: 'PAUSED', createdById: user.employeeId } },
+      },
+    });
+    await this.audit.record({
+      tenantId: user.tenantId, actorId: user.employeeId, branchId: session.branchId,
+      action: 'session.pause', entity: 'UsageSession', entityId: id,
+    });
+    this.realtime.emitToBranch(WS_EVENTS.SESSION_UPDATED, user.tenantId, session.branchId, { sessionId: id, paused: true });
+    return updated;
+  }
+
+  /** Resume: the paused gap is free — advance the billing checkpoint to now. */
+  async resume(user: AuthPrincipal, id: string) {
+    const session = await this.loadActive(user, id);
+    if (session.status !== SessionStatus.PAUSED) return session;
+    const now = new Date();
+    const pausedFrom = session.billedThroughAt ?? now;
+    const pausedSeconds = Math.max(0, Math.floor((now.getTime() - pausedFrom.getTime()) / 1000));
+    const updated = await this.prisma.usageSession.update({
+      where: { id },
+      data: {
+        status: SessionStatus.ACTIVE,
+        pausedSeconds: session.pausedSeconds + pausedSeconds,
+        billedThroughAt: now,
+        events: { create: { tenantId: user.tenantId, type: 'RESUMED', createdById: user.employeeId } },
+      },
+    });
+    await this.audit.record({
+      tenantId: user.tenantId, actorId: user.employeeId, branchId: session.branchId,
+      action: 'session.resume', entity: 'UsageSession', entityId: id,
+    });
+    this.realtime.emitToBranch(WS_EVENTS.SESSION_UPDATED, user.tenantId, session.branchId, { sessionId: id, paused: false });
+    return updated;
+  }
+
   /** End a session, finalize billing, deduct from the chosen source via the ledger. */
   async close(user: AuthPrincipal, id: string) {
     const session = await this.loadActive(user, id);
     const now = new Date();
     const from = session.billedThroughAt ?? session.startedAt ?? now;
-    const segSeconds = Math.max(0, Math.floor((now.getTime() - from.getTime()) / 1000));
+    // A paused session was already billed up to the pause; don't bill the paused gap.
+    const segSeconds =
+      session.status === SessionStatus.PAUSED
+        ? 0
+        : Math.max(0, Math.floor((now.getTime() - from.getTime()) / 1000));
     const pricing = this.pricingFromGroup(session.computer.group);
 
     const totalSeconds = session.secondsBilled + segSeconds;

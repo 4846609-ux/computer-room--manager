@@ -74,6 +74,36 @@ export class SubscriptionsService {
     return subscription;
   }
 
+  /**
+   * Record an externally-billed subscription (e.g. a Nedarim Plus standing order).
+   * autoRenew is false so the internal worker never charges — the PSP bills monthly.
+   */
+  async createExternal(params: {
+    tenantId: string;
+    customerId: string;
+    packageId: string;
+    externalRef: string;
+    priceMinor: number;
+  }) {
+    const pkg = await this.prisma.package.findFirst({
+      where: { id: params.packageId, tenantId: params.tenantId },
+    });
+    const cfg = (pkg?.config as Record<string, string>) ?? {};
+    const interval = (cfg.interval as SubscriptionInterval) ?? SubscriptionInterval.MONTHLY;
+    return this.prisma.subscription.create({
+      data: {
+        tenantId: params.tenantId,
+        customerId: params.customerId,
+        packageId: params.packageId,
+        interval,
+        priceMinor: params.priceMinor,
+        autoRenew: false,
+        externalRef: params.externalRef,
+        currentPeriodEnd: advance(new Date(), interval),
+      },
+    });
+  }
+
   /** Charge all due subscriptions; mark PAST_DUE when the balance is insufficient.
    *  Callable by a controller (with the actor's ids) or a background worker. */
   async processDue(tenantId: string, actorId: string) {

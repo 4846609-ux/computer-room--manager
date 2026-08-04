@@ -10,8 +10,11 @@ import { WS_EVENTS, type AuthPrincipal } from '@crm/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../common/audit/audit.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { NotificationsService } from '../notifications/notifications.module';
 import { assertBranchScope } from '../common/scope';
 import type { AppConfig } from '../config/configuration';
+
+const LOW_DISK_MB = 2048;
 
 function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
@@ -33,6 +36,7 @@ export class AgentService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly realtime: RealtimeGateway,
+    private readonly notifications: NotificationsService,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
@@ -157,6 +161,16 @@ export class AgentService {
       agent.computer.branchId,
       { computerId: agent.computerId, metrics: input },
     );
+
+    // Raise a manager alert on low disk space (deduped by the client via read state).
+    if (input.diskFreeMb != null && input.diskFreeMb < LOW_DISK_MB) {
+      await this.notifications.raiseManagerAlert(
+        agent.tenantId,
+        `דיסק כמעט מלא: ${agent.computer.name}`,
+        `נותרו ${input.diskFreeMb}MB בעמדה ${agent.computer.stationNumber ?? agent.computer.name}`,
+        'WARNING',
+      );
+    }
 
     // Return any pending commands for this agent to execute.
     const commands = await this.prisma.agentCommand.findMany({

@@ -16,8 +16,10 @@ import { RoomsModule } from './rooms/rooms.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { AgentModule } from './agent/agent.module';
 import { PosModule } from './pos/pos.module';
+import { PaymentsModule } from './payments/payments.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { PrintModule } from './print/print.module';
+import { PrintersModule } from './printers/printers.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { WaitingListModule } from './waiting-list/waiting-list.module';
@@ -57,8 +59,10 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     SessionsModule,
     AgentModule,
     PosModule,
+    PaymentsModule,
     CatalogModule,
     PrintModule,
+    PrintersModule,
     MaintenanceModule,
     ReservationsModule,
     WaitingListModule,

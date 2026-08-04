@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InvoiceType, Prisma, PackageType, PaymentStatus, SaleStatus } from '@crm/database';
+import { InvoiceType, Prisma, PackageType, PaymentMethod, PaymentStatus, SaleStatus } from '@crm/database';
 import { formatMoney, PERMISSIONS, WS_EVENTS, type AuthPrincipal } from '@crm/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../common/audit/audit.service';
@@ -110,7 +110,8 @@ export class SalesService {
   /** Apply a purchased package's value to the customer's balance via the ledger. */
   private async applyPackage(
     tx: Prisma.TransactionClient,
-    user: AuthPrincipal,
+    tenantId: string,
+    actorId: string,
     customerId: string,
     item: ResolvedItem,
     saleId: string,
@@ -136,7 +137,7 @@ export class SalesService {
 
     for (const credit of credits) {
       await this.balances.applyWithin(tx, {
-        tenantId: user.tenantId,
+        tenantId,
         customerId,
         unit: credit.unit,
         amount: credit.amount,
@@ -144,13 +145,13 @@ export class SalesService {
         reason: `רכישת חבילה: ${item.description}`,
         referenceType: 'Sale',
         referenceId: saleId,
-        createdById: user.employeeId,
+        createdById: actorId,
       });
     }
 
     await tx.customerPackage.create({
       data: {
-        tenantId: user.tenantId,
+        tenantId,
         customerId,
         packageId: item.referenceId!,
         remainingTime: credits.find((c) => c.unit === 'TIME_SECONDS')?.amount ?? 0,
@@ -267,7 +268,7 @@ export class SalesService {
         if (dto.customerId) {
           for (const item of resolved) {
             if (item.referenceType === 'Package') {
-              await this.applyPackage(tx, user, dto.customerId, item, created.id);
+              await this.applyPackage(tx, user.tenantId, user.employeeId, dto.customerId, item, created.id);
             }
           }
         }
@@ -300,6 +301,98 @@ export class SalesService {
       });
     }
     return sale;
+  }
+
+  /**
+   * Complete an OPEN sale with an external (e.g. Nedarim Plus) payment: record the
+   * payment, apply any package effects via the ledger, and mark the sale COMPLETED.
+   * Idempotent — a repeat call for an already-completed sale is a no-op. Callable by
+   * the payment callback (no auth principal) with tenant + actor ids.
+   */
+  async settle(
+    tenantId: string,
+    actorId: string,
+    saleId: string,
+    opts: { method: PaymentMethod; transactionId: string; cardLast4?: string; paymentId?: string },
+  ) {
+    const sale = await this.prisma.sale.findFirst({
+      where: { id: saleId, tenantId },
+      include: { items: true },
+    });
+    if (!sale) throw new NotFoundException({ code: 'NOT_FOUND', message: 'עסקה לא נמצאה' });
+    if (sale.status === SaleStatus.COMPLETED) return sale; // idempotent
+
+    await this.prisma.$transaction(async (tx) => {
+      const pending = opts.paymentId
+        ? await tx.payment.findFirst({ where: { id: opts.paymentId, saleId } })
+        : await tx.payment.findFirst({ where: { saleId, status: PaymentStatus.PENDING } });
+
+      if (pending) {
+        await tx.payment.update({
+          where: { id: pending.id },
+          data: {
+            status: PaymentStatus.COMPLETED,
+            pspToken: opts.transactionId,
+            cardLast4: opts.cardLast4,
+          },
+        });
+      } else {
+        await tx.payment.create({
+          data: {
+            tenantId,
+            saleId,
+            method: opts.method,
+            status: PaymentStatus.COMPLETED,
+            amountMinor: sale.totalMinor,
+            pspToken: opts.transactionId,
+            cardLast4: opts.cardLast4,
+          },
+        });
+      }
+
+      if (sale.customerId) {
+        for (const item of sale.items) {
+          if (item.referenceType === 'Package' && item.referenceId) {
+            const pkg = await tx.package.findFirst({
+              where: { id: item.referenceId, tenantId, deletedAt: null },
+            });
+            if (!pkg) continue;
+            await this.applyPackage(
+              tx,
+              tenantId,
+              actorId,
+              sale.customerId,
+              {
+                description: item.description,
+                quantity: item.quantity,
+                unitPriceMinor: item.unitPriceMinor,
+                totalMinor: item.totalMinor,
+                referenceType: 'Package',
+                referenceId: item.referenceId,
+                packageType: pkg.type,
+                packageConfig: (pkg.config as Record<string, number>) ?? {},
+                packageBonus: (pkg.bonus as Record<string, number>) ?? {},
+                pricingSnapshot: (item.pricingSnapshot ?? {}) as Prisma.InputJsonValue,
+              },
+              sale.id,
+            );
+          }
+        }
+      }
+
+      await tx.sale.update({ where: { id: saleId }, data: { status: SaleStatus.COMPLETED } });
+    });
+
+    await this.audit.record({
+      tenantId, actorId,
+      action: 'sale.settle', entity: 'Sale', entityId: saleId,
+      newValue: { method: opts.method, transactionId: opts.transactionId },
+    });
+    this.realtime.emitToBranch(WS_EVENTS.PAYMENT_COMPLETED, tenantId, sale.branchId, {
+      saleId,
+      amountMinor: sale.totalMinor,
+    });
+    return this.prisma.sale.findUnique({ where: { id: saleId } });
   }
 
   async listSales(user: AuthPrincipal, branchId?: string) {
