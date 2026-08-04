@@ -4,6 +4,7 @@ import {
   NOTIFICATION_PROVIDER,
 } from './notification-provider';
 import { ManualPaymentProvider, PAYMENT_PROVIDER } from './payment-provider';
+import { NoopStorageProvider, STORAGE_PROVIDER } from './storage-provider';
 
 /**
  * Binds adapter interfaces to their default implementations. Swap these providers
@@ -15,7 +16,8 @@ import { ManualPaymentProvider, PAYMENT_PROVIDER } from './payment-provider';
   providers: [
     { provide: NOTIFICATION_PROVIDER, useClass: LoggingNotificationProvider },
     { provide: PAYMENT_PROVIDER, useClass: ManualPaymentProvider },
+    { provide: STORAGE_PROVIDER, useClass: NoopStorageProvider },
   ],
-  exports: [NOTIFICATION_PROVIDER, PAYMENT_PROVIDER],
+  exports: [NOTIFICATION_PROVIDER, PAYMENT_PROVIDER, STORAGE_PROVIDER],
 })
 export class AdaptersModule {}

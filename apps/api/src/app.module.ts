@@ -26,6 +26,10 @@ import { StorageModule } from './storage/storage.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DataModule } from './data/data.module';
 import { KioskModule } from './kiosk/kiosk.module';
+import { EmployeesModule } from './employees/employees.module';
+import { SettingsModule } from './settings/settings.module';
+import { CouponsModule } from './coupons/coupons.module';
+import { JobsModule } from './jobs/jobs.module';
 import { ReportsModule } from './reports/reports.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AuditReadModule } from './audit/audit.module';
@@ -63,6 +67,10 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     NotificationsModule,
     DataModule,
     KioskModule,
+    EmployeesModule,
+    SettingsModule,
+    CouponsModule,
+    JobsModule,
     ReportsModule,
     DashboardModule,
     AuditReadModule,

@@ -61,6 +61,9 @@ export class CreateSaleDto {
   @ApiPropertyOptional({ type: PaymentInput, description: 'תשלום מיידי (אופציונלי)' })
   @IsOptional() @ValidateNested() @Type(() => PaymentInput)
   payment?: PaymentInput;
+
+  @ApiPropertyOptional({ description: 'קוד קופון' })
+  @IsOptional() @IsString() couponCode?: string;
 }
 
 export class RefundDto {

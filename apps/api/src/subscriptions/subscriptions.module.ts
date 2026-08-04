@@ -74,11 +74,12 @@ export class SubscriptionsService {
     return subscription;
   }
 
-  /** Charge all due subscriptions; mark PAST_DUE when the balance is insufficient. */
-  async processDue(user: AuthPrincipal) {
+  /** Charge all due subscriptions; mark PAST_DUE when the balance is insufficient.
+   *  Callable by a controller (with the actor's ids) or a background worker. */
+  async processDue(tenantId: string, actorId: string) {
     const due = await this.prisma.subscription.findMany({
       where: {
-        tenantId: user.tenantId,
+        tenantId,
         status: SubscriptionStatus.ACTIVE,
         autoRenew: true,
         currentPeriodEnd: { lte: new Date() },
@@ -91,7 +92,7 @@ export class SubscriptionsService {
       try {
         await this.prisma.$transaction(async (tx) => {
           await this.balances.applyWithin(tx, {
-            tenantId: user.tenantId,
+            tenantId,
             customerId: sub.customerId,
             unit: 'MONEY',
             amount: -sub.priceMinor,
@@ -99,7 +100,7 @@ export class SubscriptionsService {
             reason: 'חיוב מנוי מחזורי',
             referenceType: 'Subscription',
             referenceId: sub.id,
-            createdById: user.employeeId,
+            createdById: actorId,
           });
           await tx.subscription.update({
             where: { id: sub.id },
@@ -116,7 +117,7 @@ export class SubscriptionsService {
       }
     }
     await this.audit.record({
-      tenantId: user.tenantId, actorId: user.employeeId,
+      tenantId, actorId,
       action: 'subscription.process_due', entity: 'Subscription',
       newValue: { charged, pastDue, considered: due.length },
     });
@@ -157,7 +158,7 @@ class SubscriptionsController {
   @RequirePermissions(PERMISSIONS.PACKAGE_MANAGE)
   @ApiOperation({ summary: 'הרצת חיוב מנויים שהגיע מועדם' })
   processDue(@CurrentUser() user: AuthPrincipal) {
-    return this.subscriptions.processDue(user);
+    return this.subscriptions.processDue(user.tenantId, user.employeeId);
   }
 
   @Post(':id/cancel')
@@ -171,5 +172,6 @@ class SubscriptionsController {
 @Module({
   controllers: [SubscriptionsController],
   providers: [SubscriptionsService],
+  exports: [SubscriptionsService],
 })
 export class SubscriptionsModule {}

@@ -12,6 +12,7 @@ import { AuditService } from '../common/audit/audit.service';
 import { BalanceService } from '../balances/balance.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { assertBranchScope } from '../common/scope';
+import { couponDiscount } from '../coupons/coupons.module';
 import { CreateSaleDto, RefundDto, SaleItemInput, SaleItemKind } from './dto/sale.dto';
 
 interface ResolvedItem {
@@ -185,16 +186,38 @@ export class SalesService {
     }
 
     const subtotal = resolved.reduce((sum, r) => sum + r.totalMinor, 0);
+
+    // Apply a coupon discount to the money total, if provided and valid.
+    let discountMinor = 0;
+    let coupon: { id: string } | null = null;
+    if (dto.couponCode) {
+      const c = await this.prisma.coupon.findFirst({
+        where: { tenantId: user.tenantId, code: dto.couponCode.toUpperCase(), isActive: true },
+        include: { _count: { select: { redemptions: true } } },
+      });
+      const now = new Date();
+      const usable =
+        c &&
+        (!c.startsAt || c.startsAt <= now) &&
+        (!c.endsAt || c.endsAt >= now) &&
+        (!c.totalLimit || c._count.redemptions < c.totalLimit);
+      if (usable && c) {
+        discountMinor = couponDiscount(c, subtotal);
+        coupon = { id: c.id };
+      }
+    }
+
+    const total = subtotal - discountMinor;
     const settings = await this.prisma.organizationSettings.findUnique({
       where: { tenantId: user.tenantId },
       select: { vatPercent: true },
     });
     const vat = settings?.vatPercent ?? 17;
     // Prices are tax-inclusive; compute the embedded VAT component for the document.
-    const taxMinor = Math.round(subtotal - subtotal / (1 + vat / 100));
+    const taxMinor = Math.round(total - total / (1 + vat / 100));
 
     const paid = dto.payment?.amountMinor ?? 0;
-    if (dto.payment && paid < subtotal) {
+    if (dto.payment && paid < total) {
       throw new BadRequestException({ code: 'VALIDATION_FAILED', message: 'התשלום נמוך מסכום המכירה' });
     }
 
@@ -208,8 +231,10 @@ export class SalesService {
           employeeId: user.employeeId,
           status: dto.payment ? SaleStatus.COMPLETED : SaleStatus.OPEN,
           subtotalMinor: subtotal,
+          discountMinor,
           taxMinor,
-          totalMinor: subtotal,
+          totalMinor: total,
+          couponCode: coupon ? dto.couponCode?.toUpperCase() : undefined,
           items: {
             create: resolved.map((r) => ({
               tenantId: user.tenantId,
@@ -246,6 +271,18 @@ export class SalesService {
             }
           }
         }
+      }
+
+      if (coupon) {
+        await tx.couponRedemption.create({
+          data: {
+            tenantId: user.tenantId,
+            couponId: coupon.id,
+            customerId: dto.customerId,
+            saleId: created.id,
+            amountMinor: discountMinor,
+          },
+        });
       }
 
       return created;
