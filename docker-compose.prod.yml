@@ -43,8 +43,7 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN}
     ports:
       - "4000:4000"
-    # Run migrations then start the server.
-    command: sh -c "node node_modules/prisma/build/index.js migrate deploy --schema=prisma/schema.prisma && node dist/main.js"
+    # The image CMD applies the schema (prisma db push) then starts the server.
 
   web:
     build:
