@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Wallet, Clock, Printer } from 'lucide-react';
+import { ArrowRight, Wallet, Clock, Printer, Award } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { formatILS } from '@/lib/utils';
 import { PageHeader } from '@/components/data/page-header';
@@ -21,6 +21,7 @@ interface CustomerDetail {
   phone: string | null;
   email: string | null;
   status: string;
+  loyaltyPoints: number;
   group?: { name: string } | null;
   balance?: {
     moneyMinor: number;
@@ -137,10 +138,10 @@ export default function CustomerDetailPage() {
           </div>
         </Card>
         <Card className="flex items-center gap-3 p-4">
-          <Printer className="h-6 w-6 text-status-ending" aria-hidden />
+          <Award className="h-6 w-6 text-status-reserved" aria-hidden />
           <div>
-            <p className="text-sm text-muted-foreground">חוב</p>
-            <p className="text-lg font-bold">{formatILS(b?.debtMinor ?? 0)}</p>
+            <p className="text-sm text-muted-foreground">נקודות נאמנות</p>
+            <p className="text-lg font-bold">{customer?.loyaltyPoints ?? 0}</p>
           </div>
         </Card>
       </section>

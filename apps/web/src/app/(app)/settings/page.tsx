@@ -97,6 +97,134 @@ function OrgSettingsCard() {
   );
 }
 
+interface ConsentDoc {
+  id: string;
+  key: string;
+  title: string;
+  version: number;
+}
+
+function ConsentDocsCard() {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ key: 'TERMS', title: '', content: '' });
+  const { data } = useQuery({
+    queryKey: ['consents'],
+    queryFn: () => apiFetch<ConsentDoc[]>('/consents'),
+    retry: false,
+  });
+  const create = useMutation({
+    mutationFn: () => apiFetch('/consents', { method: 'POST', body: JSON.stringify(form) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['consents'] });
+      setForm({ key: 'TERMS', title: '', content: '' });
+    },
+  });
+
+  return (
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle>מסמכי הסכמה ותקנון</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {(data ?? []).map((d) => (
+          <div key={d.id} className="flex justify-between rounded-md border border-border px-3 py-2 text-sm">
+            <span>{d.title}</span>
+            <span className="text-muted-foreground">{d.key} · גרסה {d.version}</span>
+          </div>
+        ))}
+        <div className="grid grid-cols-2 gap-2">
+          <select
+            value={form.key}
+            onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
+            className="h-11 rounded-md border border-input bg-card px-3 text-sm"
+          >
+            <option value="TERMS">תנאי שימוש</option>
+            <option value="PRIVACY">מדיניות פרטיות</option>
+            <option value="USAGE">הסכמה לשימוש</option>
+            <option value="PARENTAL">אישור הורה</option>
+          </select>
+          <Input placeholder="כותרת" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
+          <textarea
+            placeholder="תוכן המסמך"
+            value={form.content}
+            onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
+            className="col-span-2 min-h-20 rounded-md border border-input bg-card px-3 py-2 text-sm"
+          />
+        </div>
+        <Button
+          onClick={() => create.mutate()}
+          disabled={!form.title || !form.content || create.isPending}
+          className="w-fit"
+        >
+          שמור גרסה חדשה
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface Template {
+  id: string;
+  key: string;
+  channel: string;
+  body: string;
+}
+
+function TemplatesCard() {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ key: 'SESSION_ENDING', channel: 'SMS', body: '' });
+  const { data } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => apiFetch<Template[]>('/templates'),
+    retry: false,
+  });
+  const save = useMutation({
+    mutationFn: () => apiFetch('/templates', { method: 'POST', body: JSON.stringify(form) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
+      setForm((f) => ({ ...f, body: '' }));
+    },
+  });
+
+  return (
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle>תבניות הודעה</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {(data ?? []).map((t) => (
+          <div key={t.id} className="rounded-md border border-border px-3 py-2 text-sm">
+            <span className="text-muted-foreground">{t.key} · {t.channel}</span>
+            <p className="truncate">{t.body}</p>
+          </div>
+        ))}
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="מפתח (SESSION_ENDING)" value={form.key} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))} />
+          <select
+            value={form.channel}
+            onChange={(e) => setForm((f) => ({ ...f, channel: e.target.value }))}
+            className="h-11 rounded-md border border-input bg-card px-3 text-sm"
+          >
+            <option value="SMS">SMS</option>
+            <option value="EMAIL">דוא"ל</option>
+            <option value="WHATSAPP">WhatsApp</option>
+            <option value="ON_SCREEN">על המסך</option>
+          </select>
+          <textarea
+            placeholder="תוכן ההודעה (ניתן {{name}}, {{minutes}})"
+            value={form.body}
+            onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
+            className="col-span-2 min-h-16 rounded-md border border-input bg-card px-3 py-2 text-sm"
+          />
+        </div>
+        <Button onClick={() => save.mutate()} disabled={!form.body || save.isPending} className="w-fit">
+          שמור תבנית
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const [setup, setSetup] = useState<{ secret: string; otpauthUri: string } | null>(null);
@@ -143,6 +271,8 @@ export default function SettingsPage() {
       </Card>
 
       <OrgSettingsCard />
+      <ConsentDocsCard />
+      <TemplatesCard />
 
       <Card className="max-w-xl">
         <CardHeader>
