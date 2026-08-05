@@ -27,9 +27,13 @@ RUN pnpm --filter @crm/api --prod deploy /app
 FROM node:20-bookworm-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
+# Prisma CLI for applying the schema on deploy (db push / migrate deploy).
+RUN npm i -g prisma@5.22.0
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /repo/apps/api/dist ./dist
 COPY --from=build /repo/packages/database/prisma ./prisma
 COPY --from=build /repo/node_modules/.prisma ./node_modules/.prisma
 EXPOSE 4000
-CMD ["node", "dist/main.js"]
+# Default applies the schema then starts; override in the platform if you prefer
+# to run migrations separately.
+CMD ["sh", "-c", "prisma db push --schema=prisma/schema.prisma --skip-generate || true; node dist/main.js"]

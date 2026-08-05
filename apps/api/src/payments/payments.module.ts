@@ -126,7 +126,12 @@ export class PaymentsService {
       Param2: sale.id,
       ForceUpdateMatching: '',
       ThirdPartyReceipt: '1', // we issue our own receipts
-      CallBack: `${this.config.get('publicBaseUrl', { infer: true })}/api/v1/payments/nedarim/callback`,
+      // In 'mosad' mode we rely on the CallBack registered at the Nedarim mosad
+      // level (identified by Param1 + amount), so we send no per-transaction one.
+      CallBack:
+        c.callbackMode === 'mosad'
+          ? ''
+          : `${this.config.get('publicBaseUrl', { infer: true })}/api/v1/payments/nedarim/callback`,
       CallBackMailError: c.callbackMailError,
       Tokef: '',
     };

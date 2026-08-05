@@ -25,6 +25,9 @@ export interface AppConfig {
     iframeUrl: string;
     manageUrl: string;
     callbackMailError: string;
+    // 'mosad' = rely on the CallBack registered at the Nedarim mosad level (don't
+    // send a per-transaction CallBack); 'transaction' = send PUBLIC_BASE_URL + path.
+    callbackMode: string;
   };
   publicBaseUrl: string;
   redisUrl: string;
@@ -61,6 +64,7 @@ export default (): AppConfig => ({
     iframeUrl: process.env.NEDARIM_IFRAME_URL ?? 'https://www.matara.pro/nedarimplus/iframe/',
     manageUrl: process.env.NEDARIM_MANAGE_URL ?? 'https://matara.pro/nedarimplus/Reports/Manage3.aspx',
     callbackMailError: process.env.NEDARIM_CALLBACK_MAIL_ERROR ?? '',
+    callbackMode: process.env.NEDARIM_CALLBACK_MODE ?? 'transaction',
   },
   publicBaseUrl: process.env.PUBLIC_BASE_URL ?? 'http://localhost:4000',
   redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
