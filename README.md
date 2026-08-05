@@ -93,8 +93,11 @@ pnpm dev
 דרך API אסורה בחוק בישראל):
 1. הזן ב-`.env`: `NEDARIM_MOSAD_ID`, `NEDARIM_API_VALID`, `NEDARIM_API_PASSWORD`
    (לזיכויים), ו-`PUBLIC_BASE_URL` (כתובת ציבורית שנדרים יכול להגיע אליה).
-2. בקש משירות הלקוחות של נדרים לרשום את כתובת ה-CallBack:
+2. כתובת ה-CallBack שיש לרשום אצל נדרים (ברמת מוסד):
    `<PUBLIC_BASE_URL>/api/v1/payments/nedarim/callback` — לעסקאות רגילות ולהו"ק.
+   אם כבר רשום קאלבק אחד ברמת מוסד (אי אפשר להוסיף עוד), הגדר `NEDARIM_CALLBACK_MODE=mosad`
+   — המערכת תסתמך על הקאלבק הרשום, ותזהה את *העסקאות שלנו* לפי `Param1` (טוקן ייחודי) + סכום.
+   הקאלבק ברמת מוסד יורה על כל עסקאות המוסד; עסקאות שאינן שלנו מטופלות כ-no-op בטוח.
 3. בקופה/קיוסק לחץ **"שלם באשראי (נדרים פלוס)"** — נפתח iframe מאובטח; הכרטיס מוקלד
    בתוכו, והאישור הסופי מגיע ל-CallBack בשרת (server-authoritative, עם הצלבת Param + סכום).
 - זרימה: `POST /payments/nedarim/prepare` → iframe `FinishTransaction2` → CallBack →
