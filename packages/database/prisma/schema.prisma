@@ -693,6 +693,7 @@ model Customer {
   rfid              String?
   personalCode      String?
   storageEnabled    Boolean        @default(false)
+  loyaltyPoints     Int            @default(0)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   deletedAt         DateTime?
