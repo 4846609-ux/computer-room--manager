@@ -107,6 +107,21 @@ export class SalesService {
     };
   }
 
+  /** Accrue loyalty points: 1 point per ₪10 spent (spec §loyalty). */
+  private async accrueLoyalty(
+    tx: Prisma.TransactionClient,
+    customerId: string,
+    totalMinor: number,
+  ): Promise<void> {
+    const points = Math.floor(totalMinor / 1000);
+    if (points > 0) {
+      await tx.customer.update({
+        where: { id: customerId },
+        data: { loyaltyPoints: { increment: points } },
+      });
+    }
+  }
+
   /** Apply a purchased package's value to the customer's balance via the ledger. */
   private async applyPackage(
     tx: Prisma.TransactionClient,
@@ -286,6 +301,10 @@ export class SalesService {
         });
       }
 
+      if (dto.payment && dto.customerId) {
+        await this.accrueLoyalty(tx, dto.customerId, total);
+      }
+
       return created;
     });
 
@@ -380,6 +399,8 @@ export class SalesService {
         }
       }
 
+      if (sale.customerId) await this.accrueLoyalty(tx, sale.customerId, sale.totalMinor);
+
       await tx.sale.update({ where: { id: saleId }, data: { status: SaleStatus.COMPLETED } });
     });
 
@@ -393,6 +414,15 @@ export class SalesService {
       amountMinor: sale.totalMinor,
     });
     return this.prisma.sale.findUnique({ where: { id: saleId } });
+  }
+
+  async listPayments(user: AuthPrincipal) {
+    return this.prisma.payment.findMany({
+      where: { tenantId: user.tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: { sale: { select: { branchId: true, customer: { select: { fullName: true } } } } },
+    });
   }
 
   async listSales(user: AuthPrincipal, branchId?: string) {
@@ -502,9 +532,18 @@ export class SalesService {
           `<tr><td>${escapeHtml(i.description)}</td><td class="c">${i.quantity}</td><td class="e">${formatMoney(i.totalMinor)}</td></tr>`,
       )
       .join('');
-    const paid = sale.payments
-      .filter((p) => p.status === 'COMPLETED')
-      .reduce((s, p) => s + p.amountMinor, 0);
+    const completedPayments = sale.payments.filter((p) => p.status === 'COMPLETED');
+    const paid = completedPayments.reduce((s, p) => s + p.amountMinor, 0);
+    const methodLabel: Record<string, string> = {
+      CASH: 'מזומן', CARD: 'אשראי', BANK_TRANSFER: 'העברה', CHECK: 'המחאה',
+      WALLET: 'ארנק', CREDIT: 'חיוב חשבון', VOUCHER: 'שובר', MIXED: 'משולב', SELF_SERVICE: 'שירות עצמי',
+    };
+    const paymentLines = completedPayments
+      .map((p) => {
+        const suffix = p.method === 'CARD' && p.cardLast4 ? ` •••• ${p.cardLast4}` : '';
+        return `<tr><td colspan="2">${methodLabel[p.method] ?? p.method}${suffix}</td><td class="e">${formatMoney(p.amountMinor)}</td></tr>`;
+      })
+      .join('');
     const invoice = sale.invoices[0];
     const dateStr = new Date(sale.createdAt).toLocaleString('he-IL');
 
@@ -533,6 +572,7 @@ export class SalesService {
     <tfoot>
       <tr><td colspan="2">מזה מע"מ</td><td class="e">${formatMoney(sale.taxMinor)}</td></tr>
       <tr class="total"><td colspan="2">סה"כ לתשלום</td><td class="e">${formatMoney(sale.totalMinor)}</td></tr>
+      ${paymentLines}
       <tr><td colspan="2">שולם</td><td class="e">${formatMoney(paid)}</td></tr>
     </tfoot>
   </table>

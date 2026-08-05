@@ -36,6 +36,13 @@ export class PosController {
     return this.sales.listSales(user, branchId);
   }
 
+  @Get('payments')
+  @RequirePermissions(PERMISSIONS.SALE_READ)
+  @ApiOperation({ summary: 'רשימת תשלומים' })
+  listPayments(@CurrentUser() user: AuthPrincipal) {
+    return this.sales.listPayments(user);
+  }
+
   @Post('sales/:id/refund')
   @RequirePermissions(PERMISSIONS.REFUND_CREATE)
   @ApiOperation({ summary: 'החזר / זיכוי (מסמך נגדי)' })

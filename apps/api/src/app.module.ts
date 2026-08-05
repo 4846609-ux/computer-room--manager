@@ -31,6 +31,8 @@ import { KioskModule } from './kiosk/kiosk.module';
 import { EmployeesModule } from './employees/employees.module';
 import { SettingsModule } from './settings/settings.module';
 import { CouponsModule } from './coupons/coupons.module';
+import { ConsentsModule } from './consents/consents.module';
+import { TemplatesModule } from './templates/templates.module';
 import { JobsModule } from './jobs/jobs.module';
 import { ReportsModule } from './reports/reports.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -74,6 +76,8 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     EmployeesModule,
     SettingsModule,
     CouponsModule,
+    ConsentsModule,
+    TemplatesModule,
     JobsModule,
     ReportsModule,
     DashboardModule,
