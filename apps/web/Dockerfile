@@ -16,6 +16,7 @@ COPY apps/web ./apps/web
 RUN pnpm --filter @crm/shared build
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV BUILD_STANDALONE=1
 RUN pnpm --filter @crm/web build
 
 # --- runtime: Next standalone server ---
