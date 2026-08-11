@@ -102,6 +102,10 @@ export const PERMISSIONS = {
   NOTIFICATION_SEND: 'notification.send',
   TEMPLATE_MANAGE: 'template.manage',
 
+  // Customer inquiries (two-way chat)
+  INQUIRY_READ: 'inquiry.read',
+  INQUIRY_REPLY: 'inquiry.reply',
+
   // Consents / documents
   CONSENT_MANAGE: 'consent.manage',
   DOCUMENT_MANAGE: 'document.manage',

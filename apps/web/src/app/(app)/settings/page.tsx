@@ -97,6 +97,130 @@ function OrgSettingsCard() {
   );
 }
 
+interface KioskSettings {
+  requireCustomerName: boolean;
+  requireCustomerEmail: boolean;
+  autoDisconnectEnabled: boolean;
+  autoDisconnectMinutes: number;
+  machineUnlockCode: string | null;
+  receiptEmail: string | null;
+}
+
+function KioskToggle({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="col-span-2 flex cursor-pointer items-start justify-between gap-3 rounded-md border border-input p-3">
+      <span>
+        <span className="block text-sm font-medium">{label}</span>
+        {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
+      </span>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-1 h-5 w-5 accent-primary" />
+    </label>
+  );
+}
+
+function KioskSettingsCard() {
+  const queryClient = useQueryClient();
+  const [saved, setSaved] = useState(false);
+  const { data } = useQuery({
+    queryKey: ['org-settings'],
+    queryFn: () => apiFetch<KioskSettings>('/settings/org'),
+    retry: false,
+  });
+  const [form, setForm] = useState<Partial<KioskSettings>>({});
+  const current = { ...data, ...form } as KioskSettings;
+  const set = (patch: Partial<KioskSettings>) => setForm((f) => ({ ...f, ...patch }));
+
+  const save = useMutation({
+    mutationFn: () =>
+      apiFetch('/settings/org', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          requireCustomerName: !!current.requireCustomerName,
+          requireCustomerEmail: !!current.requireCustomerEmail,
+          autoDisconnectEnabled: !!current.autoDisconnectEnabled,
+          autoDisconnectMinutes: Number(current.autoDisconnectMinutes) || 3,
+          machineUnlockCode: current.machineUnlockCode ?? '',
+          receiptEmail: current.receiptEmail ?? '',
+        }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-settings'] });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    },
+  });
+
+  if (!data) return null;
+
+  return (
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle>הגדרות קיוסק / שירות עצמי</CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-2 gap-3">
+        <KioskToggle
+          label="חובה להזין שם"
+          hint="הלקוח לא יוכל להתחבר בעמדה בלי שם"
+          checked={!!current.requireCustomerName}
+          onChange={(v) => set({ requireCustomerName: v })}
+        />
+        <KioskToggle
+          label="חובה להזין כתובת מייל"
+          hint={'לצורך שליחת קבלה בדוא"ל'}
+          checked={!!current.requireCustomerEmail}
+          onChange={(v) => set({ requireCustomerEmail: v })}
+        />
+        <KioskToggle
+          label="ניתוק אוטומטי של הלקוח"
+          hint="ניתוק אחרי חוסר פעילות במשך מספר דקות"
+          checked={!!current.autoDisconnectEnabled}
+          onChange={(v) => set({ autoDisconnectEnabled: v })}
+        />
+        <label className="flex flex-col gap-1 text-sm">
+          ניתוק אוטומטי אחרי (דקות)
+          <Input
+            type="number"
+            value={current.autoDisconnectMinutes ?? 3}
+            onChange={(e) => set({ autoDisconnectMinutes: Number(e.target.value) })}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          קוד שחרור מכונה
+          <Input
+            value={current.machineUnlockCode ?? ''}
+            onChange={(e) => set({ machineUnlockCode: e.target.value })}
+            placeholder="למשל 2035"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          כתובת מייל לשליחת קבלות
+          <Input
+            value={current.receiptEmail ?? ''}
+            onChange={(e) => set({ receiptEmail: e.target.value })}
+            placeholder="name@example.com"
+          />
+        </label>
+        <div className="col-span-2 flex items-center gap-3">
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? 'שומר…' : 'שמור'}
+          </Button>
+          {saved && <span className="text-sm text-status-available">נשמר ✓</span>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 interface ConsentDoc {
   id: string;
   key: string;
@@ -271,6 +395,7 @@ export default function SettingsPage() {
       </Card>
 
       <OrgSettingsCard />
+      <KioskSettingsCard />
       <ConsentDocsCard />
       <TemplatesCard />
 

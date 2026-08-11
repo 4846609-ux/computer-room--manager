@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Injectable, Module, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Prisma } from '@crm/database';
 import { PERMISSIONS, type AuthPrincipal } from '@crm/shared';
 import { PrismaService } from '../prisma/prisma.service';
@@ -19,6 +19,17 @@ class UpdateOrgSettingsDto {
   @ApiPropertyOptional({ example: 'UP' }) @IsOptional() @IsString() roundingRule?: string;
   @ApiPropertyOptional({ example: 30 }) @IsOptional() @IsInt() @Min(1) sessionTimeoutMin?: number;
   @ApiPropertyOptional({ example: 365 }) @IsOptional() @IsInt() @Min(1) retentionDays?: number;
+
+  // Kiosk / self-service behavior
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() requireCustomerName?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() requireCustomerEmail?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() autoDisconnectEnabled?: boolean;
+  @ApiPropertyOptional({ example: 3 }) @IsOptional() @IsInt() @Min(1) @Max(240) autoDisconnectMinutes?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() machineUnlockCode?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() receiptEmail?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() defaultCustomerGroupId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() kioskBackgroundUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() kioskAdBackgroundUrl?: string;
 }
 
 @Injectable()

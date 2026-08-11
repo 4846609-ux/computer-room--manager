@@ -27,6 +27,7 @@ import { WaitingListModule } from './waiting-list/waiting-list.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { StorageModule } from './storage/storage.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { InquiriesModule } from './inquiries/inquiries.module';
 import { DataModule } from './data/data.module';
 import { KioskModule } from './kiosk/kiosk.module';
 import { EmployeesModule } from './employees/employees.module';
@@ -73,6 +74,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     SubscriptionsModule,
     StorageModule,
     NotificationsModule,
+    InquiriesModule,
     DataModule,
     KioskModule,
     EmployeesModule,

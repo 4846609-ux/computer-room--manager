@@ -283,6 +283,7 @@ model Tenant {
   customerGroups CustomerGroup[]
   customers     Customer[]
   accessProfiles AccessProfile[]
+  customerMessages CustomerMessage[]
   products      Product[]
   packages      Package[]
   coupons       Coupon[]
@@ -332,6 +333,16 @@ model OrganizationSettings {
   retentionDays     Int      @default(365)
   privacySettings   Json?
   backupSettings    Json?
+  // Kiosk / self-service behavior (mirrors safera "הגדרות כלליות")
+  requireCustomerName  Boolean @default(false)
+  requireCustomerEmail Boolean @default(false)
+  autoDisconnectEnabled Boolean @default(false)
+  autoDisconnectMinutes Int     @default(3)
+  machineUnlockCode    String?
+  receiptEmail         String?
+  defaultCustomerGroupId String?
+  kioskBackgroundUrl   String?
+  kioskAdBackgroundUrl  String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -712,6 +723,7 @@ model Customer {
   printJobs    PrintJob[]
   sales        Sale[]
   consents     CustomerConsent[]
+  messages     CustomerMessage[]
 
   @@unique([tenantId, customerNumber])
   @@index([tenantId, phone])
@@ -719,6 +731,30 @@ model Customer {
   @@index([tenantId, status])
   @@index([tenantId, accessProfileId])
   @@map("customers")
+}
+
+enum MessageDirection {
+  INBOUND // from the customer to the business
+  OUTBOUND // from staff to the customer
+}
+
+/// Two-way customer inquiries / chat ("פניות לקוחות"). One row per message; a
+/// conversation is all messages for a customer. Unread = INBOUND with readAt null.
+model CustomerMessage {
+  id          String           @id @default(uuid())
+  tenantId    String
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  direction   MessageDirection
+  body        String
+  readAt      DateTime?
+  createdById String? // staff employee id for OUTBOUND
+  createdAt   DateTime         @default(now())
+
+  @@index([tenantId, customerId, createdAt])
+  @@index([tenantId, direction, readAt])
+  @@map("customer_messages")
 }
 
 /// Access profile = usage level assigned to customers (computer-only, email-only,
