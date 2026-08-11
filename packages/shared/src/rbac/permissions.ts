@@ -34,6 +34,10 @@ export const PERMISSIONS = {
   CUSTOMER_DELETE: 'customer.delete',
   CUSTOMER_GROUP_MANAGE: 'customer.group.manage',
 
+  // Access profiles (usage levels: computer-only / email-only / custom / video blocking)
+  ACCESS_PROFILE_READ: 'access.profile.read',
+  ACCESS_PROFILE_MANAGE: 'access.profile.manage',
+
   // Balances
   BALANCE_READ: 'balance.read',
   BALANCE_LOAD: 'balance.load',

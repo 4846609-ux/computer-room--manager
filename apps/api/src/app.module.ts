@@ -10,6 +10,7 @@ import { BalancesModule } from './balances/balances.module';
 import { AuthModule } from './auth/auth.module';
 import { BranchesModule } from './branches/branches.module';
 import { CustomersModule } from './customers/customers.module';
+import { AccessProfilesModule } from './access-profiles/access-profiles.module';
 import { ComputerGroupsModule } from './computer-groups/computer-groups.module';
 import { ComputersModule } from './computers/computers.module';
 import { RoomsModule } from './rooms/rooms.module';
@@ -55,6 +56,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     AuthModule,
     BranchesModule,
     CustomersModule,
+    AccessProfilesModule,
     ComputerGroupsModule,
     ComputersModule,
     RoomsModule,

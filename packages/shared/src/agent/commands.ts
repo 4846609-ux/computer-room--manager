@@ -22,6 +22,10 @@ export const AGENT_ACTIONS = {
   SCHEDULE_TASK: 'SCHEDULE_TASK',
   ENTER_MAINTENANCE: 'ENTER_MAINTENANCE',
   EXIT_MAINTENANCE: 'EXIT_MAINTENANCE',
+  // Apply a usage access policy on the station: which capabilities (internet,
+  // email, video) are allowed/blocked, and whether video is blocked locally,
+  // online, or both. Payload shape = AccessPolicyPayload (see access-profile.ts).
+  APPLY_ACCESS_POLICY: 'APPLY_ACCESS_POLICY',
 } as const;
 
 export type AgentAction = (typeof AGENT_ACTIONS)[keyof typeof AGENT_ACTIONS];

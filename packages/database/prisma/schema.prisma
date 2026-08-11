@@ -282,6 +282,7 @@ model Tenant {
   equipment     Equipment[]
   customerGroups CustomerGroup[]
   customers     Customer[]
+  accessProfiles AccessProfile[]
   products      Product[]
   packages      Package[]
   coupons       Coupon[]
@@ -680,6 +681,8 @@ model Customer {
   groupId           String?
   group             CustomerGroup? @relation(fields: [groupId], references: [id])
   status            CustomerStatus @default(ACTIVE)
+  accessProfileId   String?
+  accessProfile     AccessProfile? @relation(fields: [accessProfileId], references: [id])
   joinedAt          DateTime       @default(now())
   lastVisitAt       DateTime?
   creditLimitMinor  Int            @default(0)
@@ -714,7 +717,45 @@ model Customer {
   @@index([tenantId, phone])
   @@index([tenantId, email])
   @@index([tenantId, status])
+  @@index([tenantId, accessProfileId])
   @@map("customers")
+}
+
+/// Access profile = usage level assigned to customers (computer-only, email-only,
+/// custom, full). Granular switches are enforced on the station by the Agent.
+enum AccessLevel {
+  COMPUTER_ONLY
+  EMAIL_ONLY
+  CUSTOM
+  FULL
+}
+
+model AccessProfile {
+  id                    String      @id @default(uuid())
+  tenantId              String
+  tenant                Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name                  String
+  level                 AccessLevel @default(CUSTOM)
+  allowComputer         Boolean     @default(true)
+  allowInternet         Boolean     @default(true)
+  allowEmail            Boolean     @default(true)
+  allowApps             Boolean     @default(true)
+  allowUsb              Boolean     @default(true)
+  allowPrinting         Boolean     @default(true)
+  blockVideoOnComputer  Boolean     @default(false)
+  blockVideoOnInternet  Boolean     @default(false)
+  blockedSites          Json        @default("[]")
+  allowedSites          Json        @default("[]")
+  isDefault             Boolean     @default(false)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  deletedAt             DateTime?
+
+  customers Customer[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("access_profiles")
 }
 
 model CustomerBalance {

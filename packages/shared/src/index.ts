@@ -3,5 +3,7 @@ export * from './rbac/roles';
 export * from './events/ws-events';
 export * from './agent/commands';
 export * from './money';
+export * from './access/access-profile';
 export * from './schemas/common';
 export * from './schemas/auth';
+export * from './schemas/access-profile';

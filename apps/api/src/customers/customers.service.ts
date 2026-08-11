@@ -82,6 +82,7 @@ export class CustomersService {
         primaryBranchId: dto.primaryBranchId,
         nationalId: dto.nationalId,
         internalNotes: dto.internalNotes,
+        accessProfileId: dto.accessProfileId || null,
         balance: { create: { tenantId: user.tenantId } },
       },
       include: { balance: true },
@@ -106,7 +107,14 @@ export class CustomersService {
 
     const customer = await this.prisma.customer.update({
       where: { id },
-      data: { ...dto, email: dto.email?.toLowerCase() },
+      data: {
+        ...dto,
+        email: dto.email?.toLowerCase(),
+        // Empty string from the UI means "clear the access profile" (→ null FK).
+        ...(dto.accessProfileId !== undefined
+          ? { accessProfileId: dto.accessProfileId || null }
+          : {}),
+      },
     });
     await this.audit.record({
       tenantId: user.tenantId,

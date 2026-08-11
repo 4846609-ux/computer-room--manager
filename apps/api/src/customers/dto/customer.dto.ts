@@ -45,6 +45,11 @@ export class CreateCustomerDto {
   @IsOptional()
   @IsString()
   internalNotes?: string;
+
+  @ApiPropertyOptional({ description: 'מזהה פרופיל גישה (רמת משתמש). ריק/null = ללא הגבלה' })
+  @IsOptional()
+  @IsString()
+  accessProfileId?: string;
 }
 
 export class UpdateCustomerDto extends PartialType(CreateCustomerDto) {}

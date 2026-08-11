@@ -17,6 +17,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../common/audit/audit.service';
 import { BalanceService } from '../balances/balance.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { AccessProfilesService } from '../access-profiles/access-profiles.service';
 import { assertBranchScope, branchScopeFilter } from '../common/scope';
 import { AddTimeDto, OpenSessionDto, TransferSessionDto } from './dto/session.dto';
 
@@ -49,6 +50,7 @@ export class SessionsService {
     private readonly audit: AuditService,
     private readonly balances: BalanceService,
     private readonly realtime: RealtimeGateway,
+    private readonly accessProfiles: AccessProfilesService,
   ) {}
 
   private pricingFromGroup(group: GroupPricing | null): GroupPricing {
@@ -162,6 +164,15 @@ export class SessionsService {
       computerId: computer.id,
       status: 'IN_USE',
     });
+
+    // Enforce the customer's access level (computer-only / email-only / video
+    // blocking / custom) on the station. Best-effort — never fails session open.
+    await this.accessProfiles.applyToComputer(
+      user.tenantId,
+      computer.id,
+      dto.customerId,
+      user.employeeId,
+    );
 
     return session;
   }

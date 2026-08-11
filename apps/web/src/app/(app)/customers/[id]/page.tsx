@@ -22,6 +22,7 @@ interface CustomerDetail {
   email: string | null;
   status: string;
   loyaltyPoints: number;
+  accessProfileId: string | null;
   group?: { name: string } | null;
   balance?: {
     moneyMinor: number;
@@ -30,6 +31,11 @@ interface CustomerDetail {
     printColorRemaining: number;
     debtMinor: number;
   } | null;
+}
+
+interface AccessProfileOption {
+  id: string;
+  name: string;
 }
 
 interface LedgerTx {
@@ -68,6 +74,19 @@ export default function CustomerDetailPage() {
   const { data: txs } = useQuery({
     queryKey: ['customer-tx', id],
     queryFn: () => apiFetch<{ data: LedgerTx[] }>(`/customers/${id}/balance/transactions?pageSize=50`),
+  });
+  const { data: profiles } = useQuery({
+    queryKey: ['access-profiles', 'options'],
+    queryFn: () => apiFetch<{ data: AccessProfileOption[] }>('/access-profiles?pageSize=100'),
+  });
+
+  const setProfile = useMutation({
+    mutationFn: (accessProfileId: string) =>
+      apiFetch(`/customers/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ accessProfileId }),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customer', id] }),
   });
 
   const load = useMutation({
@@ -161,6 +180,31 @@ export default function CustomerDetailPage() {
               {load.isPending ? 'טוען…' : 'טען'}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>רמת משתמש (פרופיל גישה)</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={customer?.accessProfileId ?? ''}
+              onChange={(e) => setProfile.mutate(e.target.value)}
+              className="h-11 min-w-[220px] rounded-md border border-input bg-card px-3 text-sm"
+            >
+              <option value="">ללא הגבלה (גישה מלאה)</option>
+              {(profiles?.data ?? []).map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            {setProfile.isPending && <span className="text-sm text-muted-foreground">שומר…</span>}
+            <Link href="/access-profiles" className="text-sm text-primary hover:underline">
+              נהל רמות משתמש
+            </Link>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            הרמה נאכפת על העמדה בעת פתיחת שימוש (מחייב Agent מותקן על המחשב).
+          </p>
         </CardContent>
       </Card>
 
