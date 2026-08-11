@@ -1,30 +1,24 @@
-# Multi-stage build for the Next.js web app (standalone output).
-FROM node:20-bookworm-slim AS base
+# Build & run the NestJS API in a pnpm monorepo (single-stage: keeps the
+# pnpm-linked node_modules so the generated Prisma client resolves at runtime).
+FROM node:20-bookworm-slim AS build
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable
 WORKDIR /repo
 
-FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY packages/database/package.json packages/database/
 COPY packages/shared/package.json packages/shared/
-COPY apps/web/package.json apps/web/
+COPY apps/api/package.json apps/api/
 RUN pnpm install --frozen-lockfile
 
-FROM deps AS build
 COPY packages ./packages
-COPY apps/web ./apps/web
-RUN pnpm --filter @crm/shared build
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV BUILD_STANDALONE=1
-RUN pnpm --filter @crm/web build
+COPY apps/api ./apps/api
+RUN pnpm --filter @crm/database generate \
+ && pnpm --filter @crm/shared build \
+ && pnpm --filter @crm/database build \
+ && pnpm --filter @crm/api build
 
-# --- runtime: Next standalone server ---
-FROM node:20-bookworm-slim AS runtime
+WORKDIR /repo/apps/api
 ENV NODE_ENV=production
-WORKDIR /app
-COPY --from=build /repo/apps/web/.next/standalone ./
-COPY --from=build /repo/apps/web/.next/static ./apps/web/.next/static
-COPY --from=build /repo/apps/web/public ./apps/web/public
-EXPOSE 3000
-CMD ["node", "apps/web/server.js"]
+EXPOSE 4000
+CMD ["sh", "-c", "pnpm --filter @crm/database exec prisma db push --skip-generate --accept-data-loss || true; node dist/main.js"]
