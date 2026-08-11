@@ -39,6 +39,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { ReportsModule } from './reports/reports.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AuditReadModule } from './audit/audit.module';
+import { BootstrapModule } from './bootstrap/bootstrap.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { HealthController } from './health/health.controller';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -86,6 +87,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     ReportsModule,
     DashboardModule,
     AuditReadModule,
+    BootstrapModule,
   ],
   controllers: [HealthController],
   providers: [
