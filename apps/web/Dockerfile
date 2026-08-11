@@ -1,5 +1,3 @@
-# Build & run the NestJS API in a pnpm monorepo (single-stage: keeps the
-# pnpm-linked node_modules so the generated Prisma client resolves at runtime).
 FROM node:20-bookworm-slim AS build
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable
