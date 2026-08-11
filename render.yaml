@@ -1,26 +1,19 @@
-# Render blueprint (reference) for Computer Room Manager.
-# Import via Render → "Blueprints". Adjust names to match your existing services.
-# The API service name must resolve to the domain you registered as the Nedarim
-# Plus CallBack, e.g. https://computer-room-manager-api.onrender.com
+# Render Blueprint for Computer Room Manager (API + PostgreSQL).
+# The frontend is on Netlify. Redis is not needed and is omitted.
 services:
   - type: web
     name: computer-room-manager-api
     runtime: docker
+    plan: free
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
     healthCheckPath: /api/v1/health
-    # The image CMD applies the schema (prisma db push) then starts.
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
         fromDatabase:
           name: crm-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: crm-redis
           property: connectionString
       - key: JWT_ACCESS_SECRET
         generateValue: true
@@ -31,33 +24,13 @@ services:
       - key: PUBLIC_BASE_URL
         value: https://computer-room-manager-api.onrender.com
       - key: CORS_ORIGIN
-        sync: false # set to your web app URL
-      # --- Nedarim Plus ---
-      - key: NEDARIM_MOSAD_ID
         sync: false
-      - key: NEDARIM_API_VALID
+      - key: OWNER_EMAIL
         sync: false
-      - key: NEDARIM_API_PASSWORD
+      - key: OWNER_PASSWORD
         sync: false
       - key: NEDARIM_CALLBACK_MODE
-        value: mosad # rely on the CallBack registered at the Nedarim mosad level
-      - key: NEDARIM_CALLBACK_MAIL_ERROR
-        sync: false
-
-  - type: web
-    name: computer-room-manager-web
-    runtime: docker
-    dockerfilePath: ./apps/web/Dockerfile
-    dockerContext: .
-    envVars:
-      # Render exposes service env vars as Docker build args (used by the web build).
-      - key: NEXT_PUBLIC_API_URL
-        value: https://computer-room-manager-api.onrender.com
-
-  - type: keyvalue
-    name: crm-redis
-    ipAllowList: []
-    plan: free
+        value: mosad
 
 databases:
   - name: crm-db
