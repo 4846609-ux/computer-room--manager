@@ -129,6 +129,11 @@ export class ComputersService {
     return { success: true };
   }
 
+  /**
+   * Queue a remote command for a computer's agent. Only allow-listed actions are
+   * accepted; disruptive actions on a busy station require `force` or are deferred
+   * to session end. Each command is HMAC-signed with a TTL and fully audited.
+   */
   async sendCommand(user: AuthPrincipal, id: string, dto: RemoteCommandDto) {
     if (!isAgentAction(dto.action)) {
       throw new BadRequestException({
@@ -161,7 +166,7 @@ export class ComputersService {
       condition = 'AFTER_SESSION_END';
     }
 
-    const ttl = 30_000;
+    const ttl = 30_000; // ms
     const expiresAt = new Date(Date.now() + ttl);
     const commandId = randomUUID();
     const signature = this.sign(commandId, action, expiresAt);
