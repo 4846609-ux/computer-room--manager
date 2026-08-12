@@ -52,14 +52,26 @@ export class ComputersService {
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
         orderBy: { stationNumber: 'asc' },
-        include: {
-          group: { select: { id: true, name: true, billingRatio: true } },
-          agent: { select: { isOnline: true, lastHeartbeat: true, version: true } },
-        },
       }),
       this.prisma.computer.count({ where }),
     ]);
-    return { data, meta: { page: query.page, pageSize: query.pageSize, total } };
+
+    // Enrich with related data (handle gracefully if missing)
+    const enrichedData = await Promise.all(
+      data.map(async (computer) => {
+        const [group, agent] = await Promise.all([
+          computer.groupId ? this.prisma.computerGroup.findUnique({ where: { id: computer.groupId } }).catch(() => null) : null,
+          computer.id ? this.prisma.computerAgent.findUnique({ where: { computerId: computer.id } }).catch(() => null) : null,
+        ]);
+        return {
+          ...computer,
+          group: group ? { id: group.id, name: group.name, billingRatio: group.billingRatio } : null,
+          agent: agent ? { isOnline: agent.isOnline, lastHeartbeat: agent.lastHeartbeat, version: agent.version } : null,
+        };
+      }),
+    );
+
+    return { data: enrichedData, meta: { page: query.page, pageSize: query.pageSize, total } };
   }
 
   async get(user: AuthPrincipal, id: string) {
@@ -117,11 +129,6 @@ export class ComputersService {
     return { success: true };
   }
 
-  /**
-   * Queue a remote command for a computer's agent. Only allow-listed actions are
-   * accepted; disruptive actions on a busy station require `force` or are deferred
-   * to session end. Each command is HMAC-signed with a TTL and fully audited.
-   */
   async sendCommand(user: AuthPrincipal, id: string, dto: RemoteCommandDto) {
     if (!isAgentAction(dto.action)) {
       throw new BadRequestException({
@@ -154,7 +161,7 @@ export class ComputersService {
       condition = 'AFTER_SESSION_END';
     }
 
-    const ttl = 30_000; // ms
+    const ttl = 30_000;
     const expiresAt = new Date(Date.now() + ttl);
     const commandId = randomUUID();
     const signature = this.sign(commandId, action, expiresAt);
